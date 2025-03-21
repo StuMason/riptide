@@ -1,0 +1,659 @@
+<directory_structure>
+docs/
+  tasks/
+    01-project-setup.md
+    02-database-and-migrations.md
+    03-core-auth-system.md
+    04-profile-management.md
+    05-api-token-management.md
+    06-session-management.md
+    07-ui-components.md
+    08-setup-wizard.md
+    09-documentation.md
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="docs/tasks/01-project-setup.md">
+# Project Setup
+
+## Objectives
+- Initialize npm package structure
+- Configure TypeScript
+- Set up testing framework
+- Configure build pipeline
+- Set up documentation generation
+
+## Tasks
+1. Create package.json with appropriate metadata
+2. Set up TypeScript configuration
+3. Configure ESLint and Prettier
+4. Set up Jest/Vitest for testing
+5. Configure build process with rollup/tsup
+6. Set up documentation generation with TypeDoc
+7. Create GitHub repository with CI/CD workflows
+
+## Acceptance Criteria
+- Package can be built successfully
+- Tests can be run with a single command
+- Documentation can be generated automatically
+- ESLint and Prettier are configured and working
+- CI/CD pipeline is set up for testing and publishing
+</file>
+
+<file path="docs/tasks/02-database-and-migrations.md">
+# Database and Migrations
+
+## Objectives
+- Design database schema for RipTide
+- Create migration scripts
+- Build migration utilities
+- Ensure compatibility with local Supabase development
+
+## Tasks
+1. Design extended profile table schema
+2. Design API tokens table schema
+3. Design sessions table schema
+4. Create SQL migration files for all tables
+5. Build migration utility functions
+6. Implement migration status checking
+7. Create automated migration execution utilities
+8. Test migrations on local Supabase instance
+
+## Acceptance Criteria
+- All required database tables have proper schemas
+- SQL migration files are created for each table
+- Migration utilities can check migration status
+- Migration utilities can run migrations automatically
+- Migrations work with local Supabase instances
+- Migrations are idempotent (can be run multiple times safely)
+- Database schema supports all RipTide features
+</file>
+
+<file path="docs/tasks/03-core-auth-system.md">
+# Core Authentication System
+
+## Objectives
+- Implement login functionality with security measures
+- Implement registration with email verification
+- Create password reset flow
+- Set up email verification process
+- Integrate security features for authentication
+
+## Tasks
+1. Create core authentication interfaces and types
+2. Implement login functionality with Supabase
+3. Implement IP-based and user-based rate limiting for login attempts
+4. Add CAPTCHA integration for authentication forms
+5. Implement registration with email verification
+6. Create secure password reset flow with proper validation
+7. Set up email verification process
+8. Implement CSRF protection for all authentication forms
+9. Configure secure cookie handling (HTTP-only, secure, SameSite)
+10. Implement logout functionality
+11. Create authentication hooks for React
+12. Implement authentication middleware for NextJS
+
+## Acceptance Criteria
+- Users can register with email/password
+- Email verification is sent upon registration
+- Users can login with verified email/password
+- Password reset flow works securely
+- Rate limiting prevents brute force attacks
+- CAPTCHA integration works and prevents automated attacks
+- CSRF protection is implemented for all forms
+- Cookies are set with secure attributes
+- Users can log out from application
+- Authentication state is properly managed
+- Routes can be protected based on authentication status
+</file>
+
+<file path="docs/tasks/04-profile-management.md">
+# Profile Management
+
+## Objectives
+- Implement profile information management
+- Create secure password update functionality
+- Set up account deletion capability
+- Integrate security features for profile operations
+
+## Tasks
+1. Create user profile interfaces and types
+2. Implement profile information retrieval from Supabase
+3. Create functionality to update profile information
+4. Implement proper validation and sanitization for profile data
+5. Add CSRF protection for profile update operations
+6. Implement secure password change functionality
+7. Enforce strong password requirements with appropriate validation
+8. Create secure account deletion process with identity confirmation
+9. Implement rate limiting for sensitive profile operations
+10. Implement hooks for profile management
+
+## Acceptance Criteria
+- Users can view their profile information
+- Users can update their name, email, and other basic information
+- Email changes require verification
+- Input data is properly validated and sanitized
+- Password updates require current password verification
+- Password updates enforce strong password requirements
+- Rate limiting prevents brute force attacks on password forms
+- Account deletion is secure and confirms user identity
+- CSRF protection is implemented for all profile forms
+- All profile functions have appropriate hooks for React
+</file>
+
+<file path="docs/tasks/05-api-token-management.md">
+# API Token Management
+
+## Objectives
+- Implement API token creation
+- Create token scopes functionality
+- Set up token revocation
+- Implement token usage tracking
+- Integrate security features for token management
+
+## Tasks
+1. Create token interfaces and types
+2. Implement token creation functionality
+3. Create token scopes (read, write, admin)
+4. Implement secure token generation and storage
+5. Add CSRF protection for token operations
+6. Implement token revocation with proper validation
+7. Set up token usage tracking
+8. Implement rate limiting for token operations
+9. Create hooks for token management
+10. Implement token validation middleware with proper authentication
+
+## Acceptance Criteria
+- Users can create API tokens with specific scopes
+- Token is generated securely and shown only once after creation
+- Users can view a list of their active tokens
+- Token list shows creation date and last used timestamp
+- Users can revoke tokens with proper authentication
+- Tokens are properly validated when used for API access
+- Token scopes are properly enforced
+- Rate limiting protects against abuse of token operations
+- CSRF protection is implemented for all token forms
+- All token functions have appropriate hooks for React
+</file>
+
+<file path="docs/tasks/06-session-management.md">
+# Session Management
+
+## Objectives
+- Implement active session tracking
+- Create session revocation capability
+- Provide session information display
+- Integrate security features for session management
+
+## Tasks
+1. Create session interfaces and types
+2. Design database schema for sessions
+3. Implement session tracking on login
+4. Create functionality to list active sessions
+5. Implement session revocation (logout from specific devices)
+6. Add CSRF protection for session operations
+7. Implement secure session invalidation on security events
+8. Set up session timeout configuration
+9. Implement device fingerprinting for suspicious activity detection
+10. Create hooks for session management
+
+## Acceptance Criteria
+- Sessions are created and tracked when users log in
+- Users can view a list of their active sessions
+- Session list shows device information
+- Session list shows location information (where available)
+- Session list shows last active timestamp
+- Users can log out from specific sessions
+- Current session is clearly indicated
+- Sessions are automatically invalidated on security events (password change, etc.)
+- Session timeout is properly configured
+- Suspicious activities trigger appropriate security measures
+- CSRF protection is implemented for all session forms
+- All session functions have appropriate hooks for React
+</file>
+
+<file path="docs/tasks/07-ui-components.md">
+# UI Components
+
+## Objectives
+- Create authentication UI components
+- Create profile management UI components
+- Create API token management UI components
+- Create session management UI components
+- Implement form validation with security best practices
+
+## Tasks
+1. Create LoginForm component with rate limit feedback and CAPTCHA
+2. Create RegisterForm component with secure validation
+3. Create PasswordResetForm component with appropriate security measures
+4. Create EmailVerification component
+5. Create ProfileForm component with proper input sanitization
+6. Create PasswordUpdateForm component with strong password guidance
+7. Create TokenManager component with proper authorization checks
+8. Create CreateTokenForm component with scope controls
+9. Create SessionManager component with secure revocation options
+10. Create SessionCard component with appropriate information
+11. Implement form validation with XSS prevention
+12. Implement CSRF token handling in all forms
+13. Add loading and error states with secure error messages
+
+## Acceptance Criteria
+- All components render correctly
+- Components are styled with Tailwind CSS v4
+- Forms provide proper validation with error messages
+- Forms protect against CSRF attacks
+- Forms prevent XSS through proper input handling
+- Error messages don't reveal sensitive information
+- Rate limiting feedback is displayed appropriately
+- CAPTCHA integration works properly on relevant forms
+- Components work in both client and server environments where appropriate
+- Components are responsive and work on all device sizes
+- Components provide appropriate loading and error states
+</file>
+
+<file path="docs/tasks/08-setup-wizard.md">
+# Setup Wizard
+
+## Objectives
+- Create CLI tool for easy integration
+- Build environment detection utilities
+- Provide database migration utilities
+- Generate example code
+- Configure security options
+
+## Tasks
+1. Create CLI structure for setup wizard
+2. Implement Supabase configuration detection
+3. Build environment variable management
+4. Create database migration execution utilities
+5. Implement component integration instructions
+6. Create middleware setup utilities
+7. Build security configuration wizard for rate limiting
+8. Create CAPTCHA configuration options
+9. Configure CSRF protection settings
+10. Implement secure cookie configuration
+11. Generate example code for common scenarios
+
+## Acceptance Criteria
+- Setup wizard can be run with `npx riptide setup`
+- Wizard detects existing Supabase configuration
+- Wizard can create or update environment variables
+- Wizard can run database migrations
+- Security features can be configured through the wizard
+- Rate limiting can be configured with appropriate defaults
+- CAPTCHA can be enabled and configured
+- CSRF protection is set up with secure defaults
+- Secure cookie settings are properly configured
+- Clear instructions are provided for component integration
+- Middleware setup is simplified with guided instructions
+- Example code is generated for common scenarios
+</file>
+
+<file path="docs/tasks/09-documentation.md">
+# Documentation
+
+## Objectives
+- Create comprehensive package documentation
+- Write security documentation
+- Build tutorial content
+- Generate API documentation
+- Create example applications
+
+## Tasks
+1. Write README with quick start guide
+2. Create comprehensive installation and setup instructions
+3. Document all components with examples
+4. Create API reference documentation
+5. Write configuration options guide
+6. Create security best practices guide
+7. Document each security feature with implementation details
+8. Create security checklist for production deployments
+9. Document common vulnerabilities and prevention
+10. Create troubleshooting guide for security issues
+11. Generate TypeDoc API documentation
+12. Build step-by-step integration guide
+13. Create common use case examples
+14. Build example applications
+
+## Acceptance Criteria
+- Documentation is comprehensive and clear
+- README provides quick start guide
+- Installation and setup instructions are detailed
+- All components are documented with examples
+- API reference is complete with method signatures
+- Security documentation covers all implemented features
+- Security best practices are thoroughly documented
+- Common vulnerabilities and prevention strategies are explained
+- Security troubleshooting guide is provided
+- Tutorial content guides users through integration
+- API documentation includes examples for each function
+- Example applications demonstrate key features and security measures
+</file>
+
+<file path="README.md">
+# RipTide
+
+A complete authentication and user management solution for NextJS applications using Supabase.
+
+[![npm version](https://img.shields.io/npm/v/@riptide/core.svg)](https://www.npmjs.com/package/@riptide/core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+## Overview
+
+RipTide provides a secure, comprehensive authentication and user management system for NextJS applications using Supabase. Inspired by Laravel Jetstream, RipTide gives you beautifully designed components and a complete authentication system so you can focus on building your application's core features.
+
+## Features
+
+- **Complete Authentication System**
+  - Login with email/password
+  - Registration with email verification
+  - Password reset flow
+  - Email verification
+
+- **Profile Management**
+  - Update profile information
+  - Secure password updates
+  - Account deletion
+
+- **API Token Management**
+  - Create API tokens with specific scopes
+  - Token revocation
+  - Token usage tracking
+
+- **Session Management**
+  - View active sessions
+  - Revoke sessions (log out from specific devices)
+  - View device and location information
+
+- **Security Features**
+  - Rate limiting
+  - CAPTCHA integration
+  - CSRF protection
+  - XSS prevention
+
+- **Setup Wizard**
+  - CLI tool for easy integration
+  - Database migration utilities
+  - Environment detection
+
+## Installation
+
+```bash
+# Install the package
+npm install @riptide/core
+
+# Run the setup wizard
+npx riptide setup
+```
+
+## Quick Start
+
+### 1. Install and Run Setup
+
+```bash
+npm install @riptide/core
+npx riptide setup
+```
+
+The setup wizard will guide you through:
+- Configuring Supabase
+- Setting up database migrations
+- Configuring security options
+
+### 2. Wrap Your Application
+
+```tsx
+// app/layout.tsx
+import { RipTideProvider } from '@riptide/core';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <RipTideProvider>
+          {children}
+        </RipTideProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### 3. Protect Routes
+
+```tsx
+// middleware.ts
+import { authMiddleware } from '@riptide/core';
+
+export default authMiddleware({
+  publicRoutes: ['/login', '/register', '/reset-password', '/verify-email'],
+});
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
+```
+
+### 4. Authentication Pages
+
+```tsx
+// app/login/page.tsx
+import { LoginForm } from '@riptide/core/components/auth';
+
+export default function LoginPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Login</h1>
+      <LoginForm />
+    </div>
+  );
+}
+```
+
+```tsx
+// app/register/page.tsx
+import { RegisterForm } from '@riptide/core/components/auth';
+
+export default function RegisterPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Create an Account</h1>
+      <RegisterForm />
+    </div>
+  );
+}
+```
+
+### 5. User Profile Management
+
+```tsx
+// app/profile/page.tsx
+import { ProfileForm, PasswordUpdateForm } from '@riptide/core/components/profile';
+
+export default function ProfilePage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Profile</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
+          <ProfileForm />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Update Password</h2>
+          <PasswordUpdateForm />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### 6. API Token Management
+
+```tsx
+// app/api-tokens/page.tsx
+import { TokenManager, CreateTokenForm } from '@riptide/core/components/api-tokens';
+
+export default function ApiTokensPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">API Tokens</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Create Token</h2>
+          <CreateTokenForm />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Manage Tokens</h2>
+          <TokenManager />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### 7. Session Management
+
+```tsx
+// app/sessions/page.tsx
+import { SessionManager } from '@riptide/core/components/sessions';
+
+export default function SessionsPage() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Sessions</h1>
+      <SessionManager />
+    </div>
+  );
+}
+```
+
+## Using Hooks
+
+RipTide provides React hooks for accessing authentication state and functions:
+
+```tsx
+import { useAuth, useUser, useTokens, useSessions } from '@riptide/core/hooks';
+
+function MyComponent() {
+  const { isAuthenticated, login, logout } = useAuth();
+  const { user, updateProfile } = useUser();
+  const { tokens, createToken, revokeToken } = useTokens();
+  const { sessions, revokeSession } = useSessions();
+
+  // Use authentication state and functions
+}
+```
+
+## API Reference
+
+### Authentication
+
+```typescript
+login(email: string, password: string): Promise<Session>
+register(name: string, email: string, password: string): Promise<User>
+resetPassword(token: string, newPassword: string): Promise<boolean>
+sendPasswordResetEmail(email: string): Promise<boolean>
+verifyEmail(token: string): Promise<boolean>
+logout(): Promise<void>
+```
+
+### User Management
+
+```typescript
+getCurrentUser(): Promise<User | null>
+updateProfile(data: ProfileUpdateData): Promise<User>
+updatePassword(currentPassword: string, newPassword: string): Promise<boolean>
+deleteAccount(password: string): Promise<boolean>
+```
+
+### Token Management
+
+```typescript
+createToken(name: string, scopes: string[]): Promise<Token>
+listTokens(): Promise<Token[]>
+revokeToken(id: string): Promise<boolean>
+```
+
+### Session Management
+
+```typescript
+getCurrentSession(): Promise<Session>
+listSessions(): Promise<Session[]>
+revokeSession(id: string): Promise<boolean>
+```
+
+## Configuration
+
+RipTide can be configured through environment variables or the setup wizard:
+
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Security Configuration
+RIPTIDE_RATE_LIMIT_MAX=100
+RIPTIDE_RATE_LIMIT_WINDOW_MS=900000
+RIPTIDE_ENABLE_CAPTCHA=true
+RIPTIDE_CAPTCHA_PROVIDER=recaptcha
+RIPTIDE_CAPTCHA_SITE_KEY=your-captcha-site-key
+RIPTIDE_CAPTCHA_SECRET_KEY=your-captcha-secret-key
+```
+
+## Local Development
+
+RipTide works seamlessly with local Supabase instances:
+
+```bash
+# Start local Supabase
+npx supabase start
+
+# Run setup wizard with local configuration
+npx riptide setup --local
+```
+
+## Security Best Practices
+
+RipTide implements security best practices including:
+
+- Rate limiting to prevent brute force attacks
+- CSRF protection on all forms
+- Secure password handling
+- XSS prevention measures
+- Secure, HTTP-only cookies
+
+For detailed security information, see our [Security Documentation](https://github.com/riptide/docs/security.md).
+
+## Customization
+
+RipTide components can be customized to match your application's design:
+
+```tsx
+<LoginForm
+  className="my-custom-class"
+  title="Welcome Back"
+  submitButtonText="Sign In"
+  redirectTo="/dashboard"
+/>
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+</file>
+
+</files>

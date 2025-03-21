@@ -1,0 +1,12 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "name": "RipTide API Documentation",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeExternals": true,
+  "theme": "default",
+  "categorizeByGroup": true,
+  "categoryOrder": ["Authentication", "User Management", "API Token Management", "Session Management", "*"],
+  "readme": "README.md"
+} 
