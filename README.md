@@ -151,6 +151,8 @@ We follow a standard GitHub flow for contributions:
 
 3. Commit your changes with meaningful commit messages
 
+   > **Note:** We use pre-commit hooks to automatically format, lint, and build your code before each commit. This ensures code quality and prevents pushing code that doesn't meet our standards. These hooks are automatically installed when you run `npm install`.
+
 4. Push your branch and create a Pull Request
 
 5. Request a review from the maintainers

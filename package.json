@@ -17,6 +17,10 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "docs": "typedoc",
     "clean": "rimraf dist",
+    "migrate:status": "ts-node src/db/cli.ts status",
+    "migrate:up": "ts-node src/db/cli.ts up",
+    "migrate:down": "ts-node src/db/cli.ts down",
+    "migrate:dry-run": "ts-node src/db/cli.ts dry-run",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -70,6 +74,7 @@
     "lint-staged": "^15.5.0",
     "prettier": "^3.0.0",
     "rimraf": "^5.0.10",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.25.0",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"
