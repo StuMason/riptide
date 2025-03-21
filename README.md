@@ -1,4 +1,4 @@
-# RipTide
+# RipTide Core
 
 A complete authentication and user management solution for NextJS applications using Supabase.
 
@@ -14,7 +14,152 @@ A complete authentication and user management solution for NextJS applications u
 ## Installation
 
 ```bash
-npm install @masonator/riptide
+npm install @riptide/core
+```
+
+## Database Migrations
+
+RipTide Core provides a simple wrapper around Supabase CLI migrations to make database schema management seamless with your NextJS and Supabase applications.
+
+### Prerequisites
+
+1. Ensure you have Supabase CLI installed globally or as a dev dependency:
+
+```bash
+# Global installation
+npm install -g supabase
+
+# Or as a dev dependency
+npm install supabase --save-dev
+```
+
+2. Initialize Supabase in your project (if not already done):
+
+```bash
+npx supabase init
+```
+
+### Using RipTide Migration Commands
+
+RipTide provides convenient npm scripts for managing migrations:
+
+```bash
+# Initialize Supabase project structure
+npm run migrate:init
+
+# Create a new migration
+npm run migrate:new create_profiles_table
+
+# List all migrations and their status
+npm run migrate:list
+
+# Apply pending migrations
+npm run migrate:push
+
+# Reset the database and reapply all migrations (use with caution)
+npm run migrate:reset
+```
+
+### Migration File Structure
+
+When you create a new migration, Supabase CLI will create a timestamped SQL file in the `supabase/migrations` directory:
+
+```sql
+-- Example migration file: supabase/migrations/20240321000000_create_profiles_table.sql
+
+-- Create profiles table with RLS
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name TEXT,
+  avatar_url TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Set up Row Level Security (RLS)
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Users can view their own profile" 
+  ON profiles FOR SELECT 
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile" 
+  ON profiles FOR UPDATE 
+  USING (auth.uid() = id);
+```
+
+### Integrating with NextJS Apps
+
+1. Add the required environment variables to your `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-key
+```
+
+2. Create a setup script in your project (e.g., `scripts/setup-db.js`):
+
+```javascript
+// scripts/setup-db.js
+const { execSync } = require('child_process');
+
+console.log('Setting up database...');
+execSync('npm run migrate:push', { stdio: 'inherit' });
+console.log('Database setup complete!');
+```
+
+3. Add a setup command to your package.json:
+
+```json
+"scripts": {
+  "setup": "node scripts/setup-db.js",
+  "dev": "npm run setup && next dev"
+}
+```
+
+### Programmatic Usage
+
+You can use the migration utilities programmatically in your own scripts:
+
+```typescript
+import { createMigration, applyMigrations, listMigrations, resetDatabase } from '@riptide/core';
+
+// Initialize a new project
+const initResult = initializeSupabase();
+if (initResult.success) {
+  console.log('Supabase project initialized');
+}
+
+// Create a new migration
+const createResult = createMigration('create_profiles_table');
+if (createResult.success) {
+  console.log('Created new migration file');
+}
+
+// Apply all pending migrations
+const applyResult = await applyMigrations();
+if (applyResult.success) {
+  console.log('Applied all pending migrations');
+}
+
+// List migration status
+const listResult = await listMigrations();
+if (listResult.success) {
+  console.log('Migration status:', listResult.output);
+}
+
+// Execute custom SQL (requires Supabase client)
+import { createClient } from '@supabase/supabase-js';
+import { executeSQL } from '@riptide/core';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+const result = await executeSQL(supabase, 'SELECT * FROM profiles');
+console.log(result.data);
 ```
 
 ## Quick Start
@@ -35,21 +180,6 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
-```
-
-```jsx
-// middleware.ts
-import { authMiddleware } from '@riptide/core';
-
-export default authMiddleware({
-  publicRoutes: ['/login', '/register', '/reset-password'],
-  authPage: '/login',
-  defaultProtectedRoute: '/dashboard',
-});
-
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
 ```
 
 ## Usage

@@ -1,132 +1,114 @@
-#!/usr/bin/env node
 /**
- * RipTide Migration CLI
+ * RipTide Migrations CLI
  *
- * This CLI tool helps with database migration operations
+ * This CLI tool helps with database migration operations by wrapping Supabase CLI
  */
-import { createClient } from '@supabase/supabase-js';
-import { getMigrationStatus, runMigrations, rollbackMigration } from './migrate';
-import { Migration } from './types';
-import { MIGRATION_TABLE } from './index';
+import {
+  createMigration,
+  applyMigrations,
+  listMigrations,
+  resetDatabase,
+  initializeSupabase,
+} from './index';
 
-// Get environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  // eslint-disable-next-line no-console
-  console.error('Error: SUPABASE_URL and SUPABASE_SERVICE_KEY must be set');
-  process.exit(1);
-}
-
-// Create Supabase client with service key
-const client = createClient(supabaseUrl, supabaseKey);
-
-/**
- * Formats migration status as a table
- */
-function formatMigrationTable(migrations: Migration[]) {
-  // Calculate column widths
-  const idWidth = Math.max(...migrations.map(m => m.id.toString().length), 2);
-  const nameWidth = Math.max(...migrations.map(m => m.name.length), 4);
-  const filenameWidth = Math.max(...migrations.map(m => m.filename.length), 8);
-  const statusWidth = 6;
-
-  // Table header
-  // eslint-disable-next-line no-console
-  console.log(
-    `| ${'ID'.padEnd(idWidth)} | ${'Name'.padEnd(nameWidth)} | ${'Filename'.padEnd(filenameWidth)} | ${'Status'.padEnd(statusWidth)} |`
-  );
-  // eslint-disable-next-line no-console
-  console.log(
-    `| ${'-'.repeat(idWidth)} | ${'-'.repeat(nameWidth)} | ${'-'.repeat(filenameWidth)} | ${'-'.repeat(statusWidth)} |`
-  );
-
-  // Table rows
-  migrations.forEach(m => {
-    const status = m.appliedAt ? 'Applied' : 'Pending';
-    // eslint-disable-next-line no-console
-    console.log(
-      `| ${m.id.toString().padEnd(idWidth)} | ${m.name.padEnd(nameWidth)} | ${m.filename.padEnd(filenameWidth)} | ${status.padEnd(statusWidth)} |`
-    );
-  });
-}
-
+// Main function
 async function main() {
-  const command = process.argv[2] || 'status';
-  const options = { client, migrationTableName: MIGRATION_TABLE, verbose: true };
+  const command = process.argv[2] || 'help';
+  const args = process.argv.slice(3);
+
+  // Variables for command results
+  let initResult;
+  let migrationName;
+  let createResult;
+  let listResult;
+  let pushResult;
+  let resetResult;
 
   try {
+    // Execute the appropriate command
     switch (command) {
-      case 'status': {
-        const status = await getMigrationStatus(options);
+      case 'init':
         // eslint-disable-next-line no-console
-        console.log(`Migration Status: ${status.applied}/${status.total} applied, ${status.pending} pending\n`);
-        formatMigrationTable(status.migrations);
+        console.log('Initializing Supabase project...');
+        initResult = initializeSupabase();
+        if (!initResult.success) {
+          throw initResult.error;
+        }
+        // eslint-disable-next-line no-console
+        console.log('Supabase project initialized successfully.');
         break;
-      }
 
-      case 'up': {
+      case 'new':
+        if (args.length === 0) {
+          throw new Error('Migration name is required');
+        }
+        migrationName = args[0];
         // eslint-disable-next-line no-console
-        console.log('Running pending migrations...');
-        const result = await runMigrations(options);
+        console.log(`Creating new migration: ${migrationName}`);
+        createResult = createMigration(migrationName);
+        if (!createResult.success) {
+          throw createResult.error;
+        }
+        // eslint-disable-next-line no-console
+        console.log('Migration created successfully.');
+        break;
 
-        if (result.success) {
-          // eslint-disable-next-line no-console
-          console.log(`Migration successful: ${result.appliedMigrations.length} migration(s) applied.`);
-        } else {
-          // eslint-disable-next-line no-console
-          console.error(`Migration failed: ${result.error?.message}`);
-          process.exit(1);
+      case 'list':
+        // eslint-disable-next-line no-console
+        console.log('Listing migrations...');
+        listResult = listMigrations();
+        if (!listResult.success) {
+          throw listResult.error;
         }
         break;
-      }
 
-      case 'down': {
+      case 'push':
         // eslint-disable-next-line no-console
-        console.log('Rolling back last migration...');
-        const result = await rollbackMigration(options);
-
-        if (result.success) {
-          // eslint-disable-next-line no-console
-          console.log(`Rollback successful: ${result.appliedMigrations.length} migration(s) rolled back.`);
-        } else {
-          // eslint-disable-next-line no-console
-          console.error(`Rollback failed: ${result.error?.message}`);
-          process.exit(1);
+        console.log('Applying migrations...');
+        pushResult = applyMigrations();
+        if (!pushResult.success) {
+          throw pushResult.error;
         }
-        break;
-      }
-
-      case 'dry-run': {
         // eslint-disable-next-line no-console
-        console.log('Dry run of pending migrations...');
-        const dryRunOptions = { ...options, dryRun: true };
-        const result = await runMigrations(dryRunOptions);
-
-        if (result.success) {
-          // eslint-disable-next-line no-console
-          console.log(`Dry run successful: ${result.appliedMigrations.length} migration(s) would be applied.`);
-        } else {
-          // eslint-disable-next-line no-console
-          console.error(`Dry run failed: ${result.error?.message}`);
-          process.exit(1);
-        }
+        console.log('Migrations applied successfully.');
         break;
-      }
 
+      case 'reset':
+        // eslint-disable-next-line no-console
+        console.log('Resetting database...');
+        resetResult = resetDatabase();
+        if (!resetResult.success) {
+          throw resetResult.error;
+        }
+        // eslint-disable-next-line no-console
+        console.log('Database reset successfully.');
+        break;
+
+      case 'help':
       default:
         // eslint-disable-next-line no-console
-        console.error(`Unknown command: ${command}`);
-        // eslint-disable-next-line no-console
-        console.log('Available commands: status, up, down, dry-run');
-        process.exit(1);
+        console.log(`
+RipTide Migrations CLI
+
+Usage:
+  node cli.js <command> [options]
+
+Commands:
+  init                     Initialize Supabase project structure
+  new <name>               Create a new migration
+  list                     List all migrations and their status
+  push                     Apply all pending migrations
+  reset                    Reset database and reapply all migrations
+  help                     Show this help message
+        `);
+        break;
     }
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Error:', (error as Error).message);
+    console.error('Error:', error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
 
+// Run the main function
 main();

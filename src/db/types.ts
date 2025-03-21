@@ -1,40 +1,32 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-
 /**
- * Represents a single database migration
+ * Result of executing a Supabase CLI command
  */
-export interface Migration {
-  id: number;
-  name: string;
-  filename: string;
-  appliedAt?: Date;
+export interface CliCommandResult {
+  success: boolean;
+  output?: string;
+  error?: Error;
 }
 
 /**
- * Status of migrations in the database
+ * Result of executing SQL
  */
-export interface MigrationStatus {
-  total: number;
-  applied: number;
-  pending: number;
-  migrations: Migration[];
+export interface SqlExecutionResult {
+  success: boolean;
+  data?: unknown;
+  error?: unknown;
 }
 
 /**
- * Options for running migrations
+ * Options for executing a CLI command
+ */
+export interface CliCommandOptions {
+  cwd?: string;
+  silent?: boolean;
+}
+
+/**
+ * Migration options for creating a new migration
  */
 export interface MigrationOptions {
-  client: SupabaseClient;
-  dryRun?: boolean;
-  verbose?: boolean;
-  migrationTableName?: string;
-}
-
-/**
- * Result of running migrations
- */
-export interface MigrationResult {
-  success: boolean;
-  appliedMigrations: Migration[];
-  error?: Error;
+  cwd?: string;
 }

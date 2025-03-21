@@ -194,7 +194,7 @@ describe('Utils', () => {
 
       // Mock current date to be fixed
       now = new Date('2023-01-01T12:00:00Z');
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment
       // @ts-ignore
       global.Date = class extends Date {
