@@ -9,4 +9,4 @@ export * from './context/RipTideProvider';
 export * from './auth/middleware';
 export * from './utils';
 
-// This will be our public API - we'll add more exports as we develop them 
+// This will be our public API - we'll add more exports as we develop them

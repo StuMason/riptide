@@ -10,4 +10,4 @@ import '@testing-library/jest-dom';
 // Automatically clean up after each test
 afterEach(() => {
   cleanup();
-}); 
+});

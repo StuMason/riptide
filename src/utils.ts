@@ -4,17 +4,16 @@
 
 /**
  * Creates a CSRF token
- * 
+ *
  * @returns A random string to use as a CSRF token
  */
 export function createCsrfToken(): string {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
 /**
  * Validates an email address format
- * 
+ *
  * @param email - The email address to validate
  * @returns True if the email format is valid
  */
@@ -25,18 +24,18 @@ export function isValidEmail(email: string): boolean {
 
 /**
  * Validates password strength
- * 
+ *
  * @param password - The password to validate
  * @returns An object containing validity and feedback
  */
-export function validatePassword(password: string): { 
-  isValid: boolean; 
-  feedback: string 
+export function validatePassword(password: string): {
+  isValid: boolean;
+  feedback: string;
 } {
   if (password.length < 8) {
-    return { 
-      isValid: false, 
-      feedback: 'Password must be at least 8 characters long' 
+    return {
+      isValid: false,
+      feedback: 'Password must be at least 8 characters long',
     };
   }
 
@@ -51,7 +50,8 @@ export function validatePassword(password: string): {
   if (meetsCriteriaCount < 3) {
     return {
       isValid: false,
-      feedback: 'Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, and special characters'
+      feedback:
+        'Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, and special characters',
     };
   }
 
@@ -60,7 +60,7 @@ export function validatePassword(password: string): {
 
 /**
  * Sanitizes user input to prevent XSS attacks
- * 
+ *
  * @param input - The user input to sanitize
  * @returns Sanitized input
  */
@@ -75,7 +75,7 @@ export function sanitizeInput(input: string): string {
 
 /**
  * Checks if a value is a valid URL
- * 
+ *
  * @param value - The value to check
  * @returns True if the value is a valid URL
  */
@@ -90,7 +90,7 @@ export function isValidUrl(value: string): boolean {
 
 /**
  * Gets a user's browser fingerprint
- * 
+ *
  * @returns A string representing the browser fingerprint
  */
 export function getBrowserFingerprint(): string {
@@ -108,7 +108,7 @@ export function getBrowserFingerprint(): string {
 
 /**
  * Formats a date as a relative time string (e.g., "2 hours ago")
- * 
+ *
  * @param date - The date to format
  * @returns A string representing the relative time
  */
@@ -143,4 +143,4 @@ export function formatRelativeTime(date: Date | string): string {
 
   const diffInYears = Math.floor(diffInMonths / 12);
   return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
-} 
+}
