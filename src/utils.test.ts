@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { 
+import {
   createCsrfToken,
   isValidEmail,
   validatePassword,
   sanitizeInput,
   isValidUrl,
   getBrowserFingerprint,
-  formatRelativeTime
+  formatRelativeTime,
 } from './utils';
 
 describe('Utils', () => {
@@ -120,9 +120,9 @@ describe('Utils', () => {
         value: {
           userAgent: 'test-user-agent',
           language: 'en-US',
-          platform: 'test-platform'
+          platform: 'test-platform',
         },
-        writable: true
+        writable: true,
       });
 
       // Mock window.screen
@@ -130,9 +130,9 @@ describe('Utils', () => {
         value: {
           width: 1920,
           height: 1080,
-          colorDepth: 24
+          colorDepth: 24,
         },
-        writable: true
+        writable: true,
       });
 
       // Mock Intl
@@ -140,11 +140,11 @@ describe('Utils', () => {
         value: {
           DateTimeFormat: () => ({
             resolvedOptions: () => ({
-              timeZone: 'America/New_York'
-            })
-          })
+              timeZone: 'America/New_York',
+            }),
+          }),
         },
-        writable: true
+        writable: true,
       });
     });
 
@@ -152,17 +152,17 @@ describe('Utils', () => {
       // Restore original values
       Object.defineProperty(global, 'navigator', {
         value: originalNavigator,
-        writable: true
+        writable: true,
       });
 
       Object.defineProperty(global, 'screen', {
         value: originalScreen,
-        writable: true
+        writable: true,
       });
 
       Object.defineProperty(global, 'Intl', {
         value: originalIntl,
-        writable: true
+        writable: true,
       });
     });
 
@@ -190,7 +190,7 @@ describe('Utils', () => {
     beforeEach(() => {
       // Store original Date constructor
       originalDate = global.Date;
-      
+
       // Mock current date to be fixed
       now = new Date('2023-01-01T12:00:00Z');
       global.Date = class extends Date {
@@ -257,4 +257,4 @@ describe('Utils', () => {
       expect(formatRelativeTime('2022-12-31T12:00:00Z')).toBe('1 day ago');
     });
   });
-}); 
+});
