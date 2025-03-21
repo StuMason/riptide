@@ -13,16 +13,13 @@ interface RipTideProviderProps {
 
 /**
  * RipTide Provider Component
- * 
+ *
  * Provides authentication context to all child components.
- * 
+ *
  * @param props - The provider props
  * @returns The provider component
  */
-export function RipTideProvider({ 
-  children, 
-  config 
-}: RipTideProviderProps) {
+export function RipTideProvider({ children, config }: RipTideProviderProps) {
   // Initialize state
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,10 +29,9 @@ export function RipTideProvider({
   // Initialize Supabase client
   useEffect(() => {
     // Get config from props or environment variables
-    const supabaseUrl = config?.supabaseUrl || 
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseAnonKey = config?.supabaseAnonKey || 
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabaseUrl = config?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey =
+      config?.supabaseAnonKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error('Supabase URL and anonymous key are required');
@@ -51,11 +47,11 @@ export function RipTideProvider({
     const initializeAuth = async () => {
       try {
         const { data, error } = await client.auth.getSession();
-        
+
         if (error) {
           throw error;
         }
-        
+
         if (data?.session) {
           setSession(data.session);
           setUser(data.session.user);
@@ -70,13 +66,13 @@ export function RipTideProvider({
     initializeAuth();
 
     // Set up auth state change listener
-    const { data: { subscription } } = client.auth.onAuthStateChange(
-      (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user || null);
-        setIsLoading(false);
-      }
-    );
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user || null);
+      setIsLoading(false);
+    });
 
     // Clean up subscription on unmount
     return () => {
@@ -87,19 +83,19 @@ export function RipTideProvider({
   // Authentication functions
   const login = async (email: string, password: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) throw error;
     return data.session;
   };
 
   const register = async (name: string, email: string, password: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -107,7 +103,7 @@ export function RipTideProvider({
         data: { name },
       },
     });
-    
+
     if (error) throw error;
     if (!data.user) throw new Error('User registration failed');
     return data.user;
@@ -117,21 +113,20 @@ export function RipTideProvider({
     if (!supabase) throw new Error('Supabase client not initialized');
 
     const { error } = await supabase.auth.updateUser({
-      password: newPassword
+      password: newPassword,
     });
-    
+
     return !error;
   };
 
   const sendPasswordResetEmail = async (email: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' 
-        ? `${window.location.origin}/reset-password` 
-        : undefined,
+      redirectTo:
+        typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
     });
-    
+
     return !error;
   };
 
@@ -143,7 +138,7 @@ export function RipTideProvider({
 
   const logout = async () => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
@@ -162,25 +157,21 @@ export function RipTideProvider({
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /**
  * Hook to use the authentication context
- * 
+ *
  * @returns The authentication context
  * @throws Error if used outside of a RipTideProvider
  */
 export function useAuth(): AuthContext {
   const context = useContext(AuthContext);
-  
+
   if (context === undefined) {
     throw new Error('useAuth must be used within a RipTideProvider');
   }
-  
+
   return context;
-} 
+}

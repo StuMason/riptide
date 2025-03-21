@@ -12,29 +12,29 @@ export interface RipTideConfig {
    * Supabase URL
    */
   supabaseUrl: string;
-  
+
   /**
    * Supabase anonymous key
    */
   supabaseAnonKey: string;
-  
+
   /**
    * Enable CAPTCHA for auth forms
    * @default false
    */
   enableCaptcha?: boolean;
-  
+
   /**
    * CAPTCHA provider
    * @default 'recaptcha'
    */
   captchaProvider?: 'recaptcha' | 'hcaptcha';
-  
+
   /**
    * CAPTCHA site key
    */
   captchaSiteKey?: string;
-  
+
   /**
    * Rate limit configuration
    */
@@ -44,7 +44,7 @@ export interface RipTideConfig {
      * @default 100
      */
     max?: number;
-    
+
     /**
      * Time window in milliseconds
      * @default 900000 (15 minutes)
@@ -139,4 +139,4 @@ export interface SessionContext {
   isLoading: boolean;
   listSessions: () => Promise<ExtendedSession[]>;
   revokeSession: (id: string) => Promise<boolean>;
-} 
+}

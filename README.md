@@ -14,7 +14,7 @@ A complete authentication and user management solution for NextJS applications u
 ## Installation
 
 ```bash
-npm install @riptide/core
+npm install @masonator/riptide
 ```
 
 ## Quick Start
@@ -88,17 +88,20 @@ function LoginPage() {
 ### Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/your-username/riptide.git
    cd riptide
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Build the package:
+
    ```bash
    npm run build
    ```
@@ -116,7 +119,7 @@ function LoginPage() {
 
 ### Project Structure
 
-```
+```shell
 riptide/
 ├── dist/            # Built files
 ├── docs/            # Documentation
@@ -134,11 +137,14 @@ riptide/
 We follow a standard GitHub flow for contributions:
 
 1. Create a feature branch from the main branch for your task
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. Make your changes, ensuring all code:
+
+   - Format the code (`npm run format`)
    - Passes linting (`npm run lint`)
    - Has working tests (`npm test`)
    - Builds successfully (`npm run build`)

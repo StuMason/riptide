@@ -6,13 +6,13 @@ export interface AuthMiddlewareOptions {
    * Routes that don't require authentication
    */
   publicRoutes?: string[];
-  
+
   /**
    * Where to redirect unauthenticated users
    * @default '/login'
    */
   authPage?: string;
-  
+
   /**
    * Where to redirect authenticated users from public routes
    * @default '/dashboard'
@@ -22,7 +22,7 @@ export interface AuthMiddlewareOptions {
 
 /**
  * Authentication middleware for Next.js
- * 
+ *
  * @param options - Middleware options
  * @returns Next.js middleware function
  */
@@ -35,7 +35,7 @@ export function authMiddleware(options: AuthMiddlewareOptions = {}) {
 
   return async function middleware(req: NextRequest) {
     const res = NextResponse.next();
-    
+
     // Create a Supabase client using the Server Component helper
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,14 +52,15 @@ export function authMiddleware(options: AuthMiddlewareOptions = {}) {
         },
       }
     );
-    
-    const { data: { session } } = await supabase.auth.getSession();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const path = req.nextUrl.pathname;
 
     // Check if the current path is a public route
-    const isPublicRoute = publicRoutes.some(route => 
-      path === route || 
-      path.startsWith(`${route}/`)
+    const isPublicRoute = publicRoutes.some(
+      route => path === route || path.startsWith(`${route}/`)
     );
 
     // Handle authentication logic
@@ -77,4 +78,4 @@ export function authMiddleware(options: AuthMiddlewareOptions = {}) {
 
     return res;
   };
-} 
+}
