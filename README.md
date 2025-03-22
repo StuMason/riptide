@@ -164,6 +164,57 @@ function PasswordResetPage() {
 }
 ```
 
+### Ready-to-Use UI Components
+
+RipTide also provides pre-built UI components that you can use directly in your application. These components are secured, styled with Tailwind CSS, and include all necessary validation and error handling.
+
+#### LoginForm Component
+
+A complete login form with CSRF protection, rate limiting feedback, and CAPTCHA integration:
+
+```jsx
+import { LoginForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+function LoginPage() {
+  const router = useRouter();
+  
+  const handleSuccess = () => {
+    router.push('/dashboard');
+  };
+  
+  return (
+    <div className="max-w-md mx-auto mt-10">
+      <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+      
+      <LoginForm 
+        onSuccess={handleSuccess}
+        // or use redirectUrl="/dashboard" for simple redirects
+        showCaptcha={true} // Enable CAPTCHA (requires RipTideProvider to have enableCaptcha set to true)
+        className="bg-white p-6 rounded-lg shadow-md" // Optional custom styling
+      />
+    </div>
+  );
+}
+```
+
+The `LoginForm` component includes:
+- Email and password fields with proper validation
+- CSRF protection built-in
+- Rate limiting feedback for users
+- CAPTCHA integration (optional)
+- Accessible design with ARIA attributes
+- Loading states and error handling
+- Customizable styling via className prop
+
+Supported props:
+- `onSuccess`: Function to call after successful login
+- `redirectUrl`: URL to redirect to after successful login (alternative to onSuccess)
+- `showCaptcha`: Boolean to show/hide CAPTCHA integration
+- `className`: Custom CSS classes for the form
+
+Note: To use the CAPTCHA functionality, you need to enable it in the `RipTideProvider` configuration.
+
 ### Advanced Provider Configuration
 
 The `RipTideProvider` accepts configuration options to customize the authentication behavior:
@@ -353,7 +404,8 @@ riptide/
 ├── src/             # Source code
 │   ├── auth/        # Authentication related functions
 │   ├── context/     # React context providers
-│   └── test/        # Test utilities
+│   ├── components/  # UI components
+│   ├── test/        # Test utilities
 │   └── db/          # Database related functions and migrations
 ├── tsconfig.json    # TypeScript configuration
 └── package.json     # Package configuration
@@ -397,4 +449,4 @@ For detailed documentation, see [the API docs](https://stumason.github.io/riptid
 
 ## License
 
-MIT 
+MIT
