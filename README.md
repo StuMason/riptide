@@ -17,6 +17,9 @@ A complete authentication and user management solution for NextJS applications u
   - Multi-device tracking
   - Session revocation
   - Device and location tracking
+  - Session activity history
+  - Current session identification
+  - Automatic session timeout
 - 🔒 Route protection with middleware
 - 🔄 Real-time session syncing
 
@@ -180,6 +183,12 @@ The `RipTideProvider` accepts configuration options to customize the authenticat
   // CAPTCHA configuration
   enableCaptcha: true,
   captchaProvider: 'recaptcha', // or 'hcaptcha'
+  
+  // Session configuration
+  session: {
+    timeoutMs: 7 * 24 * 60 * 60 * 1000, // 7 days (default is 30 days)
+    enableCsrf: true, // Enable CSRF protection for session operations (default)
+  }
 }}>
   <Component {...pageProps} />
 </RipTideProvider>
@@ -232,6 +241,73 @@ if (!validateCsrfToken(formToken, storedToken)) {
   // Handle invalid token
 }
 ```
+
+### Session Management
+
+For comprehensive session management, RipTide provides the `useSession` hook:
+
+```jsx
+import { useSession } from '@masonator/riptide';
+
+// Display and manage user sessions
+function SecuritySettingsPage() {
+  const { 
+    sessions, 
+    currentSession, 
+    isLoading, 
+    revokeSession, 
+    getCsrfToken 
+  } = useSession();
+  
+  if (isLoading) return <div>Loading sessions...</div>;
+  
+  const handleRevoke = async (sessionId) => {
+    // Get a CSRF token for session revocation
+    const csrfToken = getCsrfToken();
+    
+    // Pass the CSRF token for security
+    await revokeSession(sessionId, csrfToken);
+    // Session list will update automatically
+  };
+  
+  return (
+    <div>
+      <h2>Active Sessions</h2>
+      {sessions.map(session => (
+        <div key={session.id} className={session.is_current ? 'current-session' : ''}>
+          <div>
+            Device: {session.device?.name} ({session.device?.os})
+          </div>
+          <div>
+            Location: {session.location?.city}, {session.location?.country}
+          </div>
+          <div>
+            Last active: {new Date(session.last_active_at).toLocaleString()}
+          </div>
+          {!session.is_current && (
+            <button onClick={() => handleRevoke(session.id)}>
+              Revoke This Session
+            </button>
+          )}
+          {session.is_current && <span>Current Session</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Security Features
+
+The session management system includes several security features:
+
+1. **CSRF Protection**: All session operations (like revocation) are protected by CSRF tokens
+2. **Configurable Session Timeout**: Set custom session expiration periods
+3. **Device Fingerprinting**: Sessions include detailed device information
+4. **Location Tracking**: Geographic information is included where available
+5. **Multi-device Management**: Users can manage all their active sessions
+6. **Current Session Indication**: The user's current session is clearly marked
+7. **Automatic Invalidation**: Sessions are invalidated on security events like password changes
 
 ## Development
 

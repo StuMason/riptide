@@ -4,6 +4,12 @@ import { SessionProvider, useSession } from './SessionProvider';
 import { ExtendedSession } from '../types';
 import { vi, describe, it, expect } from 'vitest';
 
+// Mock security module
+vi.mock('../auth/security', () => ({
+  generateCsrfToken: vi.fn().mockReturnValue('test-csrf-token'),
+  validateCsrfToken: vi.fn().mockReturnValue(true),
+}));
+
 // Mock user
 const mockUser = {
   id: '123',
@@ -70,9 +76,14 @@ const mockSupabase = {
   })),
 };
 
-// Test component that uses the session context
+// Test component that uses the session context with CSRF
 function TestComponent() {
-  const { sessions, currentSession, isLoading, revokeSession } = useSession();
+  const { sessions, currentSession, isLoading, revokeSession, getCsrfToken } = useSession();
+
+  const handleRevoke = (sessionId: string) => {
+    const csrfToken = getCsrfToken();
+    revokeSession(sessionId, csrfToken);
+  };
 
   return (
     <div>
@@ -88,7 +99,7 @@ function TestComponent() {
                 {session.id}
                 <button
                   data-testid={`revoke-${session.id}`}
-                  onClick={() => revokeSession(session.id)}
+                  onClick={() => handleRevoke(session.id)}
                 >
                   Revoke
                 </button>
@@ -104,7 +115,7 @@ function TestComponent() {
 describe('SessionProvider', () => {
   it('provides session context and lists sessions', async () => {
     render(
-      <SessionProvider supabase={mockSupabase} user={mockUser}>
+      <SessionProvider supabase={mockSupabase} user={mockUser} enableCsrf={true}>
         <TestComponent />
       </SessionProvider>
     );
@@ -127,7 +138,7 @@ describe('SessionProvider', () => {
 
   it('handles empty user state', () => {
     render(
-      <SessionProvider supabase={mockSupabase} user={null}>
+      <SessionProvider supabase={mockSupabase} user={null} enableCsrf={true}>
         <TestComponent />
       </SessionProvider>
     );
@@ -143,7 +154,7 @@ describe('SessionProvider', () => {
     mockSupabase.from.mockClear();
 
     render(
-      <SessionProvider supabase={mockSupabase} user={mockUser}>
+      <SessionProvider supabase={mockSupabase} user={mockUser} enableCsrf={true}>
         <TestComponent />
       </SessionProvider>
     );

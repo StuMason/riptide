@@ -1,16 +1,28 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  Context,
+  Provider,
+} from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { ExtendedSession, SessionContext } from '../types';
 import { parseUserAgent, getSessionDeviceInfo, getLocationInfo } from '../utils';
+import { generateCsrfToken, validateCsrfToken } from '../auth/security';
 
-// Create the session context
-const SessionContextInstance = createContext<SessionContext | undefined>(undefined);
+// Create the session context with proper typing
+const SessionContextInstance: Context<SessionContext | undefined> = createContext<
+  SessionContext | undefined
+>(undefined);
 
 // Provider props
 interface SessionProviderProps {
   children: ReactNode;
   supabase: any; // We'll use any here but in practice would type this properly
   user: User | null;
+  enableCsrf?: boolean;
 }
 
 /**
@@ -21,10 +33,23 @@ interface SessionProviderProps {
  * @param props - The provider props
  * @returns The provider component
  */
-export function SessionProvider({ children, supabase, user }: SessionProviderProps) {
+export function SessionProvider({
+  children,
+  supabase,
+  user,
+  enableCsrf = true,
+}: SessionProviderProps) {
   const [sessions, setSessions] = useState<ExtendedSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ExtendedSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [csrfToken, setCsrfToken] = useState<string>('');
+
+  // Generate a CSRF token when the provider is mounted
+  useEffect(() => {
+    if (enableCsrf) {
+      setCsrfToken(generateCsrfToken());
+    }
+  }, [enableCsrf]);
 
   // Load sessions when user changes
   useEffect(() => {
@@ -36,6 +61,21 @@ export function SessionProvider({ children, supabase, user }: SessionProviderPro
       setIsLoading(false);
     }
   }, [user]);
+
+  /**
+   * Gets a CSRF token for session operations
+   *
+   * @returns The current CSRF token
+   */
+  const getCsrfToken = (): string => {
+    // Regenerate the token if needed
+    if (enableCsrf && !csrfToken) {
+      const newToken = generateCsrfToken();
+      setCsrfToken(newToken);
+      return newToken;
+    }
+    return csrfToken;
+  };
 
   /**
    * Lists all sessions for the current user
@@ -109,9 +149,18 @@ export function SessionProvider({ children, supabase, user }: SessionProviderPro
    * Revokes a specific session
    *
    * @param id - The ID of the session to revoke
+   * @param token - Optional CSRF token for protection
    * @returns A promise resolving to a boolean indicating success
    */
-  const revokeSession = async (id: string): Promise<boolean> => {
+  const revokeSession = async (id: string, token?: string): Promise<boolean> => {
+    // Validate CSRF token if enabled
+    if (enableCsrf && token) {
+      if (!validateCsrfToken(token, csrfToken)) {
+        console.error('CSRF token validation failed');
+        return false;
+      }
+    }
+
     try {
       const { error } = await supabase
         .from('user_sessions')
@@ -125,6 +174,12 @@ export function SessionProvider({ children, supabase, user }: SessionProviderPro
 
       // Refresh the sessions list
       await listSessions();
+
+      // Regenerate CSRF token after successful revocation for improved security
+      if (enableCsrf) {
+        setCsrfToken(generateCsrfToken());
+      }
+
       return true;
     } catch (error) {
       console.error('Error revoking session:', error);
@@ -139,6 +194,7 @@ export function SessionProvider({ children, supabase, user }: SessionProviderPro
     isLoading,
     listSessions,
     revokeSession,
+    getCsrfToken,
   };
 
   return (
@@ -152,6 +208,7 @@ export function SessionProvider({ children, supabase, user }: SessionProviderPro
  * Hook for using the session context
  *
  * @returns The session context
+ * @throws Error if used outside a SessionProvider
  */
 export function useSession(): SessionContext {
   const context = useContext(SessionContextInstance);

@@ -51,6 +51,23 @@ export interface RipTideConfig {
      */
     windowMs?: number;
   };
+
+  /**
+   * Session configuration
+   */
+  session?: {
+    /**
+     * Session timeout in milliseconds
+     * @default 2592000000 (30 days)
+     */
+    timeoutMs?: number;
+
+    /**
+     * Enable CSRF protection for session operations
+     * @default true
+     */
+    enableCsrf?: boolean;
+  };
 }
 
 /**
@@ -139,5 +156,6 @@ export interface SessionContext {
   currentSession: ExtendedSession | null;
   isLoading: boolean;
   listSessions: () => Promise<ExtendedSession[]>;
-  revokeSession: (id: string) => Promise<boolean>;
+  revokeSession: (id: string, csrfToken?: string) => Promise<boolean>;
+  getCsrfToken: () => string;
 }

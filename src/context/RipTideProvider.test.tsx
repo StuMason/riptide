@@ -20,6 +20,8 @@ vi.mock('../auth/security', () => ({
   checkRateLimit: vi.fn().mockReturnValue(true),
   resetRateLimit: vi.fn(),
   verifyCaptcha: vi.fn().mockResolvedValue(true),
+  generateCsrfToken: vi.fn().mockReturnValue('test-csrf-token'),
+  validateCsrfToken: vi.fn().mockReturnValue(true),
 }));
 
 // Mock Supabase client creation
