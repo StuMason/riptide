@@ -1,15 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-  Context,
-  Provider,
-} from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { createContext, useContext, useState, useEffect, ReactNode, Context } from 'react';
+import { User } from '@supabase/supabase-js';
 import { ExtendedSession, SessionContext } from '../types';
-import { parseUserAgent, getSessionDeviceInfo, getLocationInfo } from '../utils';
+import { parseUserAgent } from '../utils';
 import { generateCsrfToken, validateCsrfToken } from '../auth/security';
 
 // Create the session context with proper typing

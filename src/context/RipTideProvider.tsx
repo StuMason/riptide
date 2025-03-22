@@ -4,7 +4,6 @@ import { RipTideConfig, AuthContext } from '../types';
 import * as AuthClient from '../auth/client';
 import { checkRateLimit, resetRateLimit, verifyCaptcha } from '../auth/security';
 import { SessionProvider } from './SessionProvider';
-import { getSessionDeviceInfo, getLocationInfo } from '../utils';
 
 // Create the authentication context
 const AuthContext = createContext<AuthContext | undefined>(undefined);
