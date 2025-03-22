@@ -19,19 +19,80 @@ export interface RipTideConfig {
   supabaseAnonKey: string;
 
   /**
-   * Enable CAPTCHA for auth forms
-   * @default false
+   * Authentication settings
+   */
+  auth?: {
+    /**
+     * Where to redirect when auth is required
+     * @default '/login'
+     */
+    redirectTo?: string;
+
+    /**
+     * Require email verification
+     * @default true
+     */
+    emailVerification?: boolean;
+
+    /**
+     * Minimum password length
+     * @default 8
+     */
+    passwordMinLength?: number;
+
+    /**
+     * Whether to persist session across page reloads
+     * @default true
+     */
+    persistSession?: boolean;
+  };
+
+  /**
+   * CAPTCHA configuration
+   */
+  captcha?: {
+    /**
+     * Enable CAPTCHA for auth forms
+     * @default false
+     */
+    enabled?: boolean;
+
+    /**
+     * CAPTCHA provider
+     * @default 'recaptcha'
+     */
+    provider?: 'recaptcha' | 'hcaptcha';
+
+    /**
+     * CAPTCHA site key
+     */
+    siteKey?: string;
+
+    /**
+     * CAPTCHA secret key (server-side only)
+     */
+    secretKey?: string;
+
+    /**
+     * Show CAPTCHA after N failed attempts
+     * @default 3
+     */
+    showAfterAttempts?: number;
+  };
+
+  /**
+   * Legacy properties (deprecated)
+   * @deprecated Use captcha.enabled instead
    */
   enableCaptcha?: boolean;
 
   /**
-   * CAPTCHA provider
-   * @default 'recaptcha'
+   * @deprecated Use captcha.provider instead
    */
   captchaProvider?: 'recaptcha' | 'hcaptcha';
 
   /**
-   * CAPTCHA site key
+   * @deprecated Use captcha.siteKey instead
    */
   captchaSiteKey?: string;
 
@@ -40,8 +101,14 @@ export interface RipTideConfig {
    */
   rateLimit?: {
     /**
+     * Enable rate limiting
+     * @default true
+     */
+    enabled?: boolean;
+
+    /**
      * Maximum number of requests
-     * @default 100
+     * @default 5
      */
     max?: number;
 
@@ -50,6 +117,12 @@ export interface RipTideConfig {
      * @default 900000 (15 minutes)
      */
     windowMs?: number;
+
+    /**
+     * Don't count successful requests against the rate limit
+     * @default true
+     */
+    skipSuccessfulRequests?: boolean;
   };
 
   /**
@@ -67,6 +140,44 @@ export interface RipTideConfig {
      * @default true
      */
     enableCsrf?: boolean;
+
+    /**
+     * Store device info with sessions
+     * @default true
+     */
+    persistDeviceInfo?: boolean;
+
+    /**
+     * Track location data (country, city)
+     * @default true
+     */
+    trackLocationInfo?: boolean;
+
+    /**
+     * Maximum concurrent sessions per user
+     * @default 5
+     */
+    maxSessions?: number;
+  };
+
+  /**
+   * UI settings
+   */
+  ui?: {
+    /**
+     * Theme for components
+     * @default 'light'
+     */
+    theme?: 'light' | 'dark';
+
+    /**
+     * Custom CSS classes
+     */
+    customClasses?: {
+      loginForm?: string;
+      registerForm?: string;
+      [key: string]: string | undefined;
+    };
   };
 }
 
@@ -118,7 +229,7 @@ export interface AuthContext {
   isLoading: boolean;
   user: User | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<Session>;
+  login: (email: string, password: string, captchaToken?: string) => Promise<Session>;
   register: (name: string, email: string, password: string) => Promise<User>;
   resetPassword: (token: string, newPassword: string) => Promise<boolean>;
   sendPasswordResetEmail: (email: string) => Promise<boolean>;

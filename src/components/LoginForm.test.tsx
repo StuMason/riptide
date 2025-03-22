@@ -47,6 +47,16 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
+  it('renders the CSRF token as a hidden input with the correct value', () => {
+    render(<LoginForm />);
+
+    // Get the hidden input by its name attribute
+    const csrfInput = document.querySelector('input[name="csrfToken"]') as HTMLInputElement;
+    expect(csrfInput).toBeInTheDocument();
+    expect(csrfInput.type).toBe('hidden');
+    expect(csrfInput.value).toBe('mock-csrf-token');
+  });
+
   it('submits the form with correct data', async () => {
     render(<LoginForm onSuccess={mockOnSuccess} />);
 
@@ -63,8 +73,9 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Check if login was called with correct data
+    // The third parameter is the CAPTCHA token which is initially empty
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123');
+      expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123', '');
     });
   });
 

@@ -10,11 +10,11 @@ export function useLogin() {
   const [error, setError] = React.useState<Error | null>(null);
 
   const handleLogin = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, captchaToken?: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        const session = await login(email, password);
+        const session = await login(email, password, captchaToken);
         return session;
       } catch (err) {
         setError(err as Error);

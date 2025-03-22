@@ -52,12 +52,18 @@ export function LoginForm({
     setCsrfToken(generateCsrfToken());
   }, []);
 
+  // Handle CAPTCHA verification
+  const handleCaptchaVerification = (token: string) => {
+    setCaptchaToken(token);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
       // Call login with email and password as separate arguments
-      await login(email, password);
+      // The CAPTCHA token may be needed by the auth system later
+      await login(email, password, captchaToken);
 
       // Handle successful login
       if (onSuccess) {
@@ -68,11 +74,6 @@ export function LoginForm({
     } catch (err) {
       // Error is already handled by the hook
     }
-  };
-
-  // Handle CAPTCHA verification
-  const handleCaptchaVerification = (token: string) => {
-    setCaptchaToken(token);
   };
 
   // Cast error to AuthError type for additional properties
@@ -143,6 +144,8 @@ export function LoginForm({
             id="captcha-container"
             data-testid="captcha-container"
             className="flex justify-center"
+            // The actual CAPTCHA component will be mounted here by the provider
+            // and will call handleCaptchaVerification when verified
           >
             {/* CAPTCHA will be rendered here by the provider */}
           </div>
