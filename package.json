@@ -1,5 +1,5 @@
 {
-  "name": "@riptide/core",
+  "name": "@masonator/riptide",
   "version": "0.1.0",
   "description": "A complete authentication and user management solution for NextJS applications using Supabase",
   "main": "dist/index.js",

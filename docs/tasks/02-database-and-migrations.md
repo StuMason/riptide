@@ -97,7 +97,7 @@ The migration system can be used in two ways:
      createMigration, 
      listMigrations, 
      applyMigrations 
-   } from '@riptide/core';
+   } from '@masonator/riptide';
    
    // Initialize a project
    const initResult = initializeSupabase();

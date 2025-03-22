@@ -14,12 +14,12 @@ A complete authentication and user management solution for NextJS applications u
 ## Installation
 
 ```bash
-npm install @riptide/core
+npm install @masonator/riptide
 ```
 
 ## Database Migrations
 
-RipTide Core provides a comprehensive solution for managing database schemas and migrations using Supabase.
+RipTide provides a comprehensive solution for managing database schemas and migrations using Supabase.
 
 ### Features
 
@@ -31,96 +31,18 @@ RipTide Core provides a comprehensive solution for managing database schemas and
 
 ### Prerequisites
 
-1. Install Supabase CLI globally or use with npx:
+You need a fresh NextJS 15 project to install this package.
 
-```bash
-# Global installation
-npm install -g supabase
+Running npx masonator/riptide init will create a new supabase project within your root directory and copy the migrations from the package to the project.
 
-# Or use with npx (no installation required)
-npx supabase
-```
+It will attempt to update the .env file with the correct values and run the migrations.
 
-2. Add the required environment variables to your project:
+It will then attempt to run the migrations and apply them to the database.
 
-```
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### Using Migration Commands
-
-RipTide provides convenient command-line tools for managing migrations:
-
-```bash
-# Check environment and migration status
-npx riptide-migrations status
-
-# Initialize Supabase project structure
-npx riptide-migrations init
-
-# Create a new migration
-npx riptide-migrations new create_custom_table
-
-# List all migrations and their status
-npx riptide-migrations list
-
-# Apply pending migrations
-npx riptide-migrations push
-
-# Reset database and reapply migrations (use with caution)
-npx riptide-migrations reset
-```
 
 ### Setup Wizard Integration
 
 RipTide's database migrations are designed to integrate seamlessly with the setup wizard:
-
-```typescript
-import { runDatabaseSetup } from '@riptide/core';
-
-// Run the database setup with auto-initialization and migration
-const setupResult = await runDatabaseSetup({
-  projectDir: './my-project',
-  autoInitialize: true,
-  autoRunMigrations: true,
-  onLog: (message, type) => {
-    console.log(`[${type}] ${message}`);
-  }
-});
-
-if (setupResult.success) {
-  console.log('Database setup completed successfully');
-} else {
-  console.error('Database setup failed:', setupResult.message);
-}
-```
-
-For more granular control, you can use the individual helper functions:
-
-```typescript
-import { 
-  checkDatabaseSetup, 
-  createSetupWizardHelpers 
-} from '@riptide/core';
-
-// Get the status without making any changes
-const status = await checkDatabaseSetup({ 
-  autoInitialize: false,
-  autoRunMigrations: false 
-});
-
-// Create setup wizard helpers
-const helpers = createSetupWizardHelpers();
-
-// Check if migrations are needed
-const needsMigrations = await helpers.checkMigrationsNeeded();
-
-// Apply pending migrations if needed
-if (needsMigrations) {
-  const success = await helpers.applyPendingMigrations();
-}
-```
 
 ### Database Schema
 
@@ -141,90 +63,11 @@ RipTide Core includes the following pre-built schemas:
    - Enables multi-device login tracking
    - Supports session revocation
 
-### Programmatic Usage
-
-You can use RipTide's migration utilities programmatically in your own code:
-
-```typescript
-import { 
-  initializeSupabase,
-  isSupabaseCliInstalled,
-  isSupabaseInitialized,
-  createMigration, 
-  applyMigrations, 
-  listMigrations, 
-  resetDatabase,
-  hasPendingMigrations,
-  parseMigrationStatus,
-  validateSupabaseEnv
-} from '@riptide/core';
-
-// Check if Supabase CLI is installed
-const hasSupabaseCli = isSupabaseCliInstalled();
-
-// Check if project has Supabase initialized
-const hasSupabaseInit = isSupabaseInitialized();
-
-// Check environment variables
-const envStatus = validateSupabaseEnv();
-if (!envStatus.valid) {
-  console.log(`Missing environment variables: ${envStatus.missingVars.join(', ')}`);
-}
-
-// Initialize Supabase project if needed
-if (!hasSupabaseInit) {
-  const initResult = initializeSupabase();
-  if (initResult.success) {
-    console.log('Supabase project initialized');
-  }
-}
-
-// Create a new migration
-const createResult = createMigration('create_custom_table');
-if (createResult.success) {
-  console.log('Created new migration file');
-}
-
-// Check if migrations need to be applied
-const needsMigrations = await hasPendingMigrations();
-if (needsMigrations) {
-  console.log('Migrations need to be applied');
-}
-
-// Get detailed migration status
-const listResult = listMigrations();
-if (listResult.success && listResult.output) {
-  const status = parseMigrationStatus(listResult.output);
-  console.log(`Applied migrations: ${status.applied.length}`);
-  console.log(`Pending migrations: ${status.pending.length}`);
-}
-
-// Apply pending migrations
-const applyResult = applyMigrations();
-if (applyResult.success) {
-  console.log('Applied all pending migrations');
-}
-
-// Execute custom SQL (requires Supabase client)
-import { createClient } from '@supabase/supabase-js';
-import { executeSQL } from '@riptide/core';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
-
-const result = await executeSQL(supabase, 'SELECT * FROM profiles');
-if (result.success) {
-  console.log(result.data);
-}
-```
-
 ## Quick Start
 
 ```jsx
 // _app.tsx
-import { RipTideProvider } from '@riptide/core';
+import { RipTideProvider } from '@masonator/riptide';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -245,7 +88,7 @@ export default MyApp;
 ### Authentication
 
 ```jsx
-import { useAuth } from '@riptide/core';
+import { useAuth } from '@masonator/riptide';
 
 function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -316,6 +159,7 @@ riptide/
 │   ├── auth/        # Authentication related functions
 │   ├── context/     # React context providers
 │   └── test/        # Test utilities
+│   └── db/          # Database related functions and migrations
 ├── tsconfig.json    # TypeScript configuration
 └── package.json     # Package configuration
 ```
@@ -354,7 +198,7 @@ We follow a standard GitHub flow for contributions:
 
 ## Documentation
 
-For detailed documentation, see [the API docs](https://your-username.github.io/riptide/).
+For detailed documentation, see [the API docs](https://stumason.github.io/riptide/).
 
 ## License
 
