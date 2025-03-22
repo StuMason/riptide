@@ -11,3 +11,6 @@ export * from './utils';
 
 // Export database utilities
 export * from './db';
+
+// Export UI components
+export * from './components/LoginForm';

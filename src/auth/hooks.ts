@@ -10,11 +10,11 @@ export function useLogin() {
   const [error, setError] = React.useState<Error | null>(null);
 
   const handleLogin = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, captchaToken?: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        const session = await login(email, password);
+        const session = await login(email, password, captchaToken);
         return session;
       } catch (err) {
         setError(err as Error);
@@ -42,11 +42,11 @@ export function useRegister() {
   const [error, setError] = React.useState<Error | null>(null);
 
   const handleRegister = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (name: string, email: string, password: string, captchaToken?: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        const user = await register(name, email, password);
+        const user = await register(name, email, password, captchaToken);
         return user;
       } catch (err) {
         setError(err as Error);

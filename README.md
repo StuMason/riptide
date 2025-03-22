@@ -1,6 +1,95 @@
-# RipTide Core
+# RipTide
 
-A complete authentication and user management solution for NextJS applications using Supabase.
+**RipTide is an NPM package** that provides a complete authentication and user management solution for NextJS applications using Supabase.
+
+This package is designed to be integrated into your existing NextJS application, providing ready-to-use hooks, components, and utilities to handle all aspects of authentication.
+
+## Installation
+
+```bash
+npm install @masonator/riptide
+```
+
+## Purpose & Overview
+
+RipTide connects your NextJS application to Supabase for auth functionality while providing:
+
+- Pre-built React components for login, registration, profile management
+- React hooks for auth state and operations
+- Route protection middleware
+- Session management
+- CSRF and rate-limiting protections
+- CAPTCHA integration
+
+## Quick Start Integration
+
+1. Install the package in your NextJS project:
+
+   ```bash
+   npm install @masonator/riptide
+   ```
+
+2. Add the RipTide provider to your app:
+
+   ```jsx
+   // app/layout.tsx or similar wrapper component
+   import { RipTideProvider } from '@masonator/riptide';
+
+   export default function RootLayout({ children }) {
+     return (
+       <html lang="en">
+         <body>
+           <RipTideProvider config={{
+             supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+             supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+           }}>
+             {children}
+           </RipTideProvider>
+         </body>
+       </html>
+     );
+   }
+   ```
+
+3. Use the components in your pages:
+
+   ```jsx
+   // app/login/page.tsx or similar
+   import { LoginForm } from '@masonator/riptide';
+   
+   export default function LoginPage() {
+     return (
+       <div className="max-w-md mx-auto mt-10">
+         <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+         <LoginForm redirectUrl="/dashboard" />
+       </div>
+     );
+   }
+   ```
+
+## Supabase Setup
+
+### Using the RipTide CLI
+
+RipTide comes with a CLI tool to help you set up Supabase in your NextJS project:
+
+```bash
+# Initialize Supabase with RipTide (this runs migrations and sets up your environment)
+npx riptide init
+```
+
+This command will:
+
+1. Check if Supabase CLI is installed
+2. Initialize Supabase if not already done
+3. Set up environment variables in your .env.local file
+4. Copy and apply database migrations
+
+### Prerequisites
+
+You need an existing NextJS 15 project to integrate this package.
+
+Running `npx masonator/riptide init` will create a new supabase project within your root directory and copy the migrations from the package to the project.
 
 ## Features
 
@@ -23,83 +112,156 @@ A complete authentication and user management solution for NextJS applications u
 - 🔒 Route protection with middleware
 - 🔄 Real-time session syncing
 
-## Installation
+## Configuration Reference
 
-```bash
-npm install @masonator/riptide
-```
-
-### Using the CLI
-
-RipTide comes with a CLI tool to help you set up Supabase in your NextJS project:
-
-```bash
-# Initialize Supabase with RipTide (this runs migrations and sets up your environment)
-npx riptide init
-```
-
-This command will:
-1. Check if Supabase CLI is installed
-2. Initialize Supabase if not already done
-3. Set up environment variables in your .env.local file
-4. Copy and apply database migrations
-
-### Prerequisites
-
-You need a fresh NextJS 15 project to install this package.
-
-Running npx masonator/riptide init will create a new supabase project within your root directory and copy the migrations from the package to the project.
-
-It will attempt to update the .env file with the correct values and run the migrations.
-
-It will then attempt to run the migrations and apply them to the database.
-
-### Setup Wizard Integration
-
-RipTide's database migrations are designed to integrate seamlessly with the setup wizard:
-
-### Database Schema
-
-RipTide Core includes the following pre-built schemas:
-
-1. **Profiles Table**: Extends Supabase auth.users with profile information
-   - Links to `auth.users` with ON DELETE CASCADE
-   - Stores user profile information like name, avatar, and preferences
-   - Includes RLS policies for secure access
-
-2. **API Tokens Table**: Manages user-generated API tokens
-   - Stores token names, hashes, scopes, and expiration dates
-   - Tracks token usage with last_used_at timestamp
-   - Includes revocation capabilities
-
-3. **User Sessions Table**: Tracks active user sessions
-   - Stores device and location information
-   - Enables multi-device login tracking
-   - Supports session revocation
-
-## Quick Start
+The `RipTideProvider` accepts a comprehensive configuration object to customize behavior:
 
 ```jsx
-// _app.tsx
-import { RipTideProvider } from '@masonator/riptide';
-
-function MyApp({ Component, pageProps }) {
-  return (
-    <RipTideProvider config={{
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    }}>
-      <Component {...pageProps} />
-    </RipTideProvider>
-  );
-}
-
-export default MyApp;
+<RipTideProvider config={{
+  // REQUIRED: Supabase connection settings
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  
+  // OPTIONAL: Auth settings
+  auth: {
+    redirectTo: '/login',             // Where to redirect when auth required
+    emailVerification: true,          // Require email verification
+    passwordMinLength: 8,             // Minimum password length
+    persistSession: true,             // Whether to persist session across page reloads
+  },
+  
+  // OPTIONAL: Rate limiting settings
+  rateLimit: {
+    enabled: true,                    // Enable rate limiting
+    max: 5,                           // Maximum attempts
+    windowMs: 15 * 60000,             // Time window in milliseconds (15 minutes)
+    skipSuccessfulRequests: true,     // Don't count successful logins
+  },
+  
+  // OPTIONAL: CAPTCHA settings
+  captcha: {
+    enabled: false,                   // Enable CAPTCHA integration
+    provider: 'recaptcha',            // 'recaptcha' or 'hcaptcha'
+    siteKey: '',                      // Your CAPTCHA site key
+    secretKey: '',                    // Your CAPTCHA secret key (server-side only)
+    showAfterAttempts: 3,             // Show CAPTCHA after N failed attempts
+  },
+  
+  // OPTIONAL: Session settings
+  session: {
+    timeoutMs: 30 * 24 * 60 * 60 * 1000, // Session timeout in ms (default 30 days)
+    enableCsrf: true,                 // Enable CSRF protection
+    persistDeviceInfo: true,          // Store device info with sessions
+    trackLocationInfo: true,          // Track location data (country, city)
+    maxSessions: 5,                   // Maximum concurrent sessions per user
+  },
+  
+  // OPTIONAL: UI settings
+  ui: {
+    theme: 'light',                   // Light or dark theme for components
+    customClasses: {                  // Custom CSS classes
+      loginForm: '',
+      registerForm: '',
+      // etc.
+    },
+  },
+}}>
+  {children}
+</RipTideProvider>
 ```
 
-## Usage
+## Component Library
 
-### Authentication
+RipTide provides pre-built UI components that integrate with your NextJS application:
+
+### LoginForm Component
+
+A complete login form with CSRF protection, rate limiting feedback, and CAPTCHA integration:
+
+```jsx
+import { LoginForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+function LoginPage() {
+  const router = useRouter();
+  
+  const handleSuccess = () => {
+    router.push('/dashboard');
+  };
+  
+  return (
+    <div className="max-w-md mx-auto mt-10">
+      <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+      
+      <LoginForm 
+        onSuccess={handleSuccess}
+        // or use redirectUrl="/dashboard" for simple redirects
+        showCaptcha={true} // Enable CAPTCHA (requires captcha.enabled config)
+        className="bg-white p-6 rounded-lg shadow-md" // Optional custom styling
+      />
+    </div>
+  );
+}
+```
+
+The `LoginForm` component includes:
+
+- Email and password fields with proper validation
+- CSRF protection built-in
+- Rate limiting feedback for users
+- CAPTCHA integration (optional)
+- Accessible design with ARIA attributes
+- Loading states and error handling
+- Customizable styling via className prop
+
+Supported props:
+
+- `onSuccess`: Function to call after successful login
+- `redirectUrl`: URL to redirect to after successful login (alternative to onSuccess)
+- `showCaptcha`: Boolean to show/hide CAPTCHA integration
+- `className`: Custom CSS classes for the form
+
+#### CAPTCHA Implementation Details
+
+When `showCaptcha={true}` is set on the `LoginForm` component, RipTide will:
+
+1. Render the CAPTCHA widget in the `captcha-container` element
+2. When the user completes the CAPTCHA challenge, the verification token is automatically captured
+3. The token is stored in the component's state and sent with the login credentials when the form is submitted
+4. The backend validates this token with the CAPTCHA provider to verify the user is human
+5. If validation fails, an error will be displayed in the form
+
+To enable CAPTCHA protection:
+
+1. Configure the CAPTCHA provider in your `RipTideProvider`:
+
+```jsx
+<RipTideProvider config={{
+  // ... other configuration ...
+  captcha: {
+    enabled: true,
+    provider: 'recaptcha', // or 'hcaptcha'
+    siteKey: 'your-site-key',  // Your CAPTCHA site key
+    secretKey: 'your-secret-key' // Your CAPTCHA secret key (server side only)
+  }
+}}>
+  <Component {...pageProps} />
+</RipTideProvider>
+```
+
+2. Add the `showCaptcha` prop to your `LoginForm` component:
+
+```jsx
+<LoginForm showCaptcha={true} />
+```
+
+The CAPTCHA will be displayed after excessive failed login attempts, or can be shown by default when the `showCaptcha` prop is set to `true`.
+
+## Hooks API
+
+RipTide provides React hooks for integrating authentication into your custom components:
+
+### Authentication Hooks
 
 ```jsx
 import { useAuth, useLogin, useRegister, usePasswordReset } from '@masonator/riptide';
@@ -115,8 +277,10 @@ function ProfilePage() {
 }
 
 // Login form with hook
-function LoginPage() {
+function CustomLoginPage() {
   const { login, isLoading, error } = useLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -130,17 +294,13 @@ function LoginPage() {
   
   return (
     <form onSubmit={handleLogin}>
-      {error && <div className="error">{error.message}</div>}
-      {/* Form fields */}
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Loading...' : 'Login'}
-      </button>
+      {/* Your custom form implementation */}
     </form>
   );
 }
 
 // Registration with hooks
-function RegisterPage() {
+function CustomRegisterPage() {
   const { register, isLoading, error } = useRegister();
   
   const handleRegister = async (e) => {
@@ -157,94 +317,14 @@ function RegisterPage() {
 }
 
 // Password reset
-function PasswordResetPage() {
+function CustomPasswordResetPage() {
   const { sendResetEmail, resetPassword, isLoading, error } = usePasswordReset();
   
   // Implementation for request form and reset form
 }
 ```
 
-### Advanced Provider Configuration
-
-The `RipTideProvider` accepts configuration options to customize the authentication behavior:
-
-```jsx
-<RipTideProvider config={{
-  // Supabase connection
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  
-  // Rate limiting options
-  rateLimit: {
-    max: 5,               // Maximum attempts
-    windowMs: 15 * 60000, // Time window in milliseconds (15 minutes)
-  },
-  
-  // CAPTCHA configuration
-  enableCaptcha: true,
-  captchaProvider: 'recaptcha', // or 'hcaptcha'
-  
-  // Session configuration
-  session: {
-    timeoutMs: 7 * 24 * 60 * 60 * 1000, // 7 days (default is 30 days)
-    enableCsrf: true, // Enable CSRF protection for session operations (default)
-  }
-}}>
-  <Component {...pageProps} />
-</RipTideProvider>
-```
-
-### Security Features
-
-#### Rate Limiting
-
-RipTide includes built-in rate limiting to protect against brute force attacks. This can be configured in the provider:
-
-```jsx
-<RipTideProvider config={{
-  rateLimit: {
-    max: 5,                // Maximum attempts
-    windowMs: 15 * 60000,  // Time window (15 minutes)
-  }
-}}>
-  {/* ... */}
-</RipTideProvider>
-```
-
-#### CAPTCHA Integration
-
-Support for CAPTCHA verification is included and can be enabled in the provider:
-
-```jsx
-<RipTideProvider config={{
-  enableCaptcha: true,
-  captchaProvider: 'recaptcha', // or 'hcaptcha'
-}}>
-  {/* ... */}
-</RipTideProvider>
-```
-
-You'll need to set up a CAPTCHA component in your forms and set the token appropriately.
-
-#### CSRF Protection
-
-CSRF protection is automatically included for all authentication forms. The implementation uses cryptographically secure random tokens generated with `crypto.randomBytes`:
-
-```jsx
-import { generateCsrfToken, validateCsrfToken } from '@masonator/riptide';
-
-// In your form component
-const csrfToken = generateCsrfToken();
-
-// When submitting
-if (!validateCsrfToken(formToken, storedToken)) {
-  // Handle invalid token
-}
-```
-
-### Session Management
-
-For comprehensive session management, RipTide provides the `useSession` hook:
+### Session Management Hooks
 
 ```jsx
 import { useSession } from '@masonator/riptide';
@@ -297,9 +377,9 @@ function SecuritySettingsPage() {
 }
 ```
 
-#### Security Features
+## Security Features
 
-The session management system includes several security features:
+RipTide includes several security features:
 
 1. **CSRF Protection**: All session operations (like revocation) are protected by CSRF tokens
 2. **Configurable Session Timeout**: Set custom session expiration periods
@@ -311,7 +391,9 @@ The session management system includes several security features:
 
 ## Development
 
-### Setup
+### Setup for Package Development
+
+If you want to contribute to the RipTide package development:
 
 1. Clone the repository:
 
@@ -353,7 +435,8 @@ riptide/
 ├── src/             # Source code
 │   ├── auth/        # Authentication related functions
 │   ├── context/     # React context providers
-│   └── test/        # Test utilities
+│   ├── components/  # UI components
+│   ├── test/        # Test utilities
 │   └── db/          # Database related functions and migrations
 ├── tsconfig.json    # TypeScript configuration
 └── package.json     # Package configuration
@@ -397,4 +480,4 @@ For detailed documentation, see [the API docs](https://stumason.github.io/riptid
 
 ## License
 
-MIT 
+MIT
