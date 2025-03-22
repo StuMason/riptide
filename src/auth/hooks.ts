@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { useAuth } from '../context/RipTideProvider';
-import type { User } from '@supabase/supabase-js';
 
 /**
  * Hook for login functionality

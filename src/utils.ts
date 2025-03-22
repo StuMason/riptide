@@ -144,3 +144,103 @@ export function formatRelativeTime(date: Date | string): string {
   const diffInYears = Math.floor(diffInMonths / 12);
   return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
 }
+
+/**
+ * Parses a user agent string to extract device and browser information
+ *
+ * @param userAgent - The user agent string to parse
+ * @returns An object containing parsed device and browser information
+ */
+export function parseUserAgent(userAgent: string = ''): {
+  browser: string;
+  os: string;
+  deviceType: string;
+} {
+  if (!userAgent) {
+    return { browser: 'Unknown', os: 'Unknown', deviceType: 'Unknown' };
+  }
+
+  // Determine browser
+  let browser = 'Unknown';
+  if (userAgent.includes('Chrome') && !userAgent.includes('Edg/')) {
+    browser = 'Chrome';
+  } else if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browser = 'Safari';
+  } else if (userAgent.includes('Edg/')) {
+    browser = 'Edge';
+  } else if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) {
+    browser = 'Internet Explorer';
+  }
+
+  // Determine OS
+  let os = 'Unknown';
+  if (userAgent.includes('Windows')) {
+    os = 'Windows';
+  } else if (userAgent.includes('Mac OS')) {
+    os = 'macOS';
+  } else if (userAgent.includes('Linux')) {
+    os = 'Linux';
+  } else if (userAgent.includes('Android')) {
+    os = 'Android';
+  } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    os = 'iOS';
+  }
+
+  // Determine device type
+  let deviceType = 'Desktop';
+  if (userAgent.includes('Mobile')) {
+    deviceType = 'Mobile';
+  } else if (userAgent.includes('Tablet') || userAgent.includes('iPad')) {
+    deviceType = 'Tablet';
+  }
+
+  return { browser, os, deviceType };
+}
+
+/**
+ * Gets session device information based on the current client
+ *
+ * @returns An object containing device information for session tracking
+ */
+export function getSessionDeviceInfo(): {
+  userAgent: string;
+  language: string;
+  platform: string;
+} {
+  if (typeof window === 'undefined') {
+    return {
+      userAgent: '',
+      language: '',
+      platform: '',
+    };
+  }
+
+  return {
+    userAgent: window.navigator.userAgent,
+    language: window.navigator.language,
+    platform: window.navigator.platform,
+  };
+}
+
+/**
+ * Gets location information for a session
+ * In a real-world implementation, this would call a geolocation service
+ *
+ * @param ip - The IP address to lookup
+ * @returns A promise resolving to location information
+ */
+export async function getLocationInfo(ip: string): Promise<{
+  city?: string;
+  country?: string;
+  ip: string;
+}> {
+  // In a real implementation, you would call a geolocation API
+  // This is a stub implementation
+  return {
+    city: 'Unknown',
+    country: 'Unknown',
+    ip,
+  };
+}

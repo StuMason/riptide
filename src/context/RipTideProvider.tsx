@@ -3,6 +3,7 @@ import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-
 import { RipTideConfig, AuthContext } from '../types';
 import * as AuthClient from '../auth/client';
 import { checkRateLimit, resetRateLimit, verifyCaptcha } from '../auth/security';
+import { SessionProvider } from './SessionProvider';
 
 // Create the authentication context
 const AuthContext = createContext<AuthContext | undefined>(undefined);
@@ -95,13 +96,17 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
             platform: typeof window !== 'undefined' ? window.navigator.platform : '',
           };
 
+          // Get session timeout from config or use default (30 days)
+          const sessionTimeoutMs = config?.session?.timeoutMs || 30 * 24 * 60 * 60 * 1000;
+          const expiresAt = new Date(Date.now() + sessionTimeoutMs).toISOString();
+
           // Create a new session record
           await client.from('user_sessions').insert({
             user_id: newSession.user.id,
             auth_session_id: newSession.user.id, // This is just a placeholder - in a real app you'd track the actual session ID
             device_info: deviceInfo,
             is_current: true,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            expires_at: expiresAt,
           });
         } catch (error) {
           console.error('Error recording session:', error);
@@ -230,7 +235,17 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <SessionProvider
+        supabase={supabase}
+        user={user}
+        enableCsrf={config?.session?.enableCsrf !== false}
+      >
+        {children}
+      </SessionProvider>
+    </AuthContext.Provider>
+  );
 }
 
 /**
