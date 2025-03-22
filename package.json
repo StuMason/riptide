@@ -13,12 +13,12 @@
     "riptide": "dist/cli.js"
   },
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint .",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "dev": "NODE_OPTIONS=--no-warnings tsc --watch",
+    "build": "NODE_OPTIONS=--no-warnings tsc",
+    "test": "NODE_OPTIONS=--no-warnings vitest run",
+    "test:watch": "NODE_OPTIONS=--no-warnings vitest",
+    "lint": "NODE_OPTIONS=--no-warnings eslint .",
+    "format": "NODE_OPTIONS=--no-warnings prettier --write \"src/**/*.{ts,tsx}\"",
     "docs": "typedoc",
     "clean": "rimraf dist",
     "prepare": "husky",
