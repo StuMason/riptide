@@ -1,10 +1,8 @@
 // Export auth components
-import * as authMiddleware from './auth/middleware';
-export { authMiddleware };
+export * from './auth';
 
 // Export context components
-import * as RipTideProvider from './context/RipTideProvider';
-export { RipTideProvider };
+export { RipTideProvider, useAuth } from './context/RipTideProvider';
 
 // Export types and utils
 export * from './types';

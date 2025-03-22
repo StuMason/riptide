@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
 import { RipTideConfig, AuthContext } from '../types';
+import * as AuthClient from '../auth/client';
+import { checkRateLimit, resetRateLimit, verifyCaptcha } from '../auth/security';
 
 // Create the authentication context
 const AuthContext = createContext<AuthContext | undefined>(undefined);
@@ -46,15 +48,26 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
     // Get initial session and user
     const initializeAuth = async () => {
       try {
-        const { data, error } = await client.auth.getSession();
+        const session = await AuthClient.getSession(client);
 
-        if (error) {
-          throw error;
-        }
+        if (session) {
+          setSession(session);
+          setUser(session.user);
 
-        if (data?.session) {
-          setSession(data.session);
-          setUser(data.session.user);
+          // Create/update user profile in database if not exists
+          if (session.user) {
+            try {
+              await client.from('profiles').upsert(
+                {
+                  id: session.user.id,
+                  last_sign_in_at: new Date().toISOString(),
+                },
+                { onConflict: 'id' }
+              );
+            } catch (error) {
+              console.error('Error updating profile:', error);
+            }
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -68,9 +81,33 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
     // Set up auth state change listener
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((event, newSession) => {
+    } = client.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user || null);
+
+      // Create/update sessions table on login
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        try {
+          // Get IP address and device info from client side if possible
+          const deviceInfo = {
+            userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
+            language: typeof window !== 'undefined' ? window.navigator.language : '',
+            platform: typeof window !== 'undefined' ? window.navigator.platform : '',
+          };
+
+          // Create a new session record
+          await client.from('user_sessions').insert({
+            user_id: newSession.user.id,
+            auth_session_id: newSession.user.id, // This is just a placeholder - in a real app you'd track the actual session ID
+            device_info: deviceInfo,
+            is_current: true,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          });
+        } catch (error) {
+          console.error('Error recording session:', error);
+        }
+      }
+
       setIsLoading(false);
     });
 
@@ -84,63 +121,99 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
   const login = async (email: string, password: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // Apply rate limiting by email (simple approach - could be enhanced with IP tracking)
+    const rateLimitKey = `login:${email}`;
 
-    if (error) throw error;
-    return data.session;
+    // Check rate limit config
+    const maxAttempts = config?.rateLimit?.max || 5;
+    const windowMs = config?.rateLimit?.windowMs || 15 * 60 * 1000;
+
+    if (!checkRateLimit(rateLimitKey, maxAttempts, windowMs)) {
+      throw new Error(`Too many login attempts. Please try again later.`);
+    }
+
+    try {
+      const session = await AuthClient.signIn(supabase, email, password);
+
+      // Reset rate limit on successful login
+      resetRateLimit(rateLimitKey);
+
+      return session;
+    } catch (error) {
+      // Keep rate limit in place for failed attempts
+      throw error;
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      },
-    });
+    // Handle CAPTCHA if enabled
+    if (config?.enableCaptcha && typeof window !== 'undefined') {
+      const captchaToken = (window as any).captchaToken; // This would be set by your CAPTCHA component
 
-    if (error) throw error;
-    if (!data.user) throw new Error('User registration failed');
-    return data.user;
+      if (!captchaToken) {
+        throw new Error('CAPTCHA verification failed. Please try again.');
+      }
+
+      // Verify CAPTCHA if server-side secret is available
+      if (process.env.CAPTCHA_SECRET_KEY) {
+        const isValid = await verifyCaptcha(
+          captchaToken,
+          process.env.CAPTCHA_SECRET_KEY,
+          config?.captchaProvider || 'recaptcha'
+        );
+
+        if (!isValid) {
+          throw new Error('CAPTCHA verification failed. Please try again.');
+        }
+      }
+    }
+
+    const user = await AuthClient.signUp(supabase, email, password, { name });
+    return user;
   };
 
-  const resetPassword = async (_token: string, newPassword: string) => {
+  const resetPassword = async (token: string, newPassword: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    return !error;
+    // The token is handled by Supabase when redirecting to your app
+    return AuthClient.resetPassword(supabase, newPassword);
   };
 
   const sendPasswordResetEmail = async (email: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo:
-        typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
-    });
+    const redirectTo =
+      typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
 
-    return !error;
+    return AuthClient.sendPasswordResetEmail(supabase, email, redirectTo);
   };
 
-  const verifyEmail = async (_token: string) => {
-    // Note: Email verification is handled automatically by Supabase
-    // This is a placeholder for any additional verification logic
-    return true;
+  const verifyEmail = async (token: string) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
+
+    // The token is handled by Supabase when redirecting to your app
+    return AuthClient.verifyEmail(supabase, token);
   };
 
   const logout = async () => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    // Update the current session to inactive
+    if (user) {
+      try {
+        await supabase
+          .from('user_sessions')
+          .update({ is_current: false })
+          .eq('user_id', user.id)
+          .eq('is_current', true);
+      } catch (error) {
+        console.error('Error updating session status:', error);
+      }
+    }
+
+    await AuthClient.signOut(supabase);
   };
 
   // Context value
@@ -173,5 +246,5 @@ export function useAuth(): AuthContext {
     throw new Error('useAuth must be used within a RipTideProvider');
   }
 
-  return context;
+  return context as AuthContext;
 }
