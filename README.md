@@ -4,12 +4,6 @@
 
 This package is designed to be integrated into your existing NextJS application, providing ready-to-use hooks, components, and utilities to handle all aspects of authentication.
 
-## Installation
-
-```bash
-npm install @masonator/riptide
-```
-
 ## Purpose & Overview
 
 RipTide connects your NextJS application to Supabase for auth functionality while providing:

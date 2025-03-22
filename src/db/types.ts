@@ -13,4 +13,5 @@ export interface CliCommandResult {
  */
 export interface MigrationOptions {
   cwd?: string;
+  silent?: boolean;
 }

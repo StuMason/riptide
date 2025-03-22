@@ -136,7 +136,42 @@ export function setupSupabase(options: SupabaseSetupOptions = {}): CliCommandRes
     );
   }
 
-  // Step 6: Run migrations
+  // Step 6: Check if using local environment and manage Supabase service
+  const isLocalEnv = isUsingLocalEnvironment();
+
+  if (isLocalEnv) {
+    // Check if Supabase is running locally
+    if (!isSupabaseRunning()) {
+      if (!silent) {
+        console.log('Supabase is not running. Starting Supabase...');
+      }
+
+      // Start Supabase
+      const startResult = startSupabase({ cwd, silent });
+      if (!startResult.success) {
+        return {
+          success: false,
+          error: new Error(
+            `Failed to start Supabase: ${startResult.error?.message || 'Unknown error'}`
+          ),
+        };
+      }
+
+      if (!silent) {
+        console.log('Supabase started successfully. Migrations will be automatically applied.');
+      }
+
+      // When Supabase starts, it automatically applies migrations, so we can skip Step 7
+      return {
+        success: true,
+        message: 'Supabase setup completed successfully and service started',
+      };
+    } else if (!silent) {
+      console.log('Supabase is already running. Applying migrations...');
+    }
+  }
+
+  // Step 7: Run migrations (only if not already applied by starting Supabase)
   const migrateResult = applyMigrations({ cwd });
   if (!migrateResult.success) {
     return {
@@ -173,6 +208,48 @@ export function isSupabaseCliInstalled(): boolean {
  */
 export function isSupabaseInitialized(cwd: string = process.cwd()): boolean {
   return existsSync(join(cwd, 'supabase'));
+}
+
+/**
+ * Checks if using local Supabase environment based on URL
+ * @returns True if using local Supabase environment
+ */
+export function isUsingLocalEnvironment(): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return !supabaseUrl || supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1');
+}
+
+/**
+ * Checks if Supabase is running locally
+ * @returns True if Supabase is running
+ */
+export function isSupabaseRunning(): boolean {
+  try {
+    // Try to ping the Supabase health check endpoint
+    execSync('curl --fail --silent http://localhost:54321/rest/v1/', { stdio: 'pipe' });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Starts Supabase locally
+ * @param options Additional options
+ * @returns Command result
+ */
+export function startSupabase(options: MigrationOptions = {}): CliCommandResult {
+  // Ensure Supabase is initialized
+  if (!isSupabaseInitialized(options.cwd)) {
+    return {
+      success: false,
+      error: new Error(
+        'Supabase is not initialized in this project. Run "npx supabase init" first.'
+      ),
+    };
+  }
+
+  return executeSupabaseCli('start', options);
 }
 
 /**
