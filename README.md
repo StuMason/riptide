@@ -4,12 +4,6 @@
 
 This package is designed to be integrated into your existing NextJS application, providing ready-to-use hooks, components, and utilities to handle all aspects of authentication.
 
-## Installation
-
-```bash
-npm install @masonator/riptide
-```
-
 ## Purpose & Overview
 
 RipTide connects your NextJS application to Supabase for auth functionality while providing:
@@ -169,6 +163,28 @@ The `RipTideProvider` accepts a comprehensive configuration object to customize 
   {children}
 </RipTideProvider>
 ```
+
+## Package Structure
+
+RipTide is organized to support both client and server environments:
+
+- **Main Import** (`import { RipTideProvider } from '@masonator/riptide'`)  
+  Contains browser-safe components and utilities for authentication UI and client-side auth functionality.
+
+- **Server Import** (`import { setupSupabase } from '@masonator/riptide/server'`)  
+  Contains server-side utilities for database setup, migrations, and other Node.js specific functionality.
+
+### Example Usage
+
+```tsx
+// In your frontend components (client-side)
+import { RipTideProvider, useAuth } from '@masonator/riptide';
+
+// In your setup scripts or server-side code (Node.js environment only)
+import { setupSupabase, applyMigrations } from '@masonator/riptide/server';
+```
+
+This separation ensures that browser environments don't attempt to load Node.js specific modules.
 
 ## Component Library
 

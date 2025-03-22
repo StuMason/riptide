@@ -1,16 +1,12 @@
-// Export auth components
-export * from './auth';
-
-// Export context components
-export { RipTideProvider, useAuth } from './context/RipTideProvider';
-export { useSession } from './context/SessionProvider';
-
-// Export types and utils
+// Re-export types (safe for all environments)
 export * from './types';
 export * from './utils';
 
-// Export database utilities
-export * from './db';
-
-// Export UI components
+// Export only client-safe modules by default
+export { RipTideProvider, useAuth } from './context/RipTideProvider';
+export { useSession } from './context/SessionProvider';
+export * from './auth/client';
+export * from './auth/security';
 export * from './components/LoginForm';
+
+// Important: Don't export DB module from main entry point
