@@ -5,9 +5,18 @@ A complete authentication and user management solution for NextJS applications u
 ## Features
 
 - 🔐 Authentication (login, register, password reset)
+  - Secure email/password authentication
+  - Email verification flow
+  - Password reset with secure tokens
+  - Protection against brute force attacks with rate limiting
+  - CAPTCHA integration (reCAPTCHA, hCaptcha)
+  - CSRF protection for all forms
 - 👤 User profile management
 - 🔑 API token management
 - 🕒 Session management
+  - Multi-device tracking
+  - Session revocation
+  - Device and location tracking
 - 🔒 Route protection with middleware
 - 🔄 Real-time session syncing
 
@@ -90,10 +99,21 @@ export default MyApp;
 ### Authentication
 
 ```jsx
-import { useAuth } from '@masonator/riptide';
+import { useAuth, useLogin, useRegister, usePasswordReset } from '@masonator/riptide';
 
+// Basic auth status check
+function ProfilePage() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>Please log in</div>;
+  
+  return <div>Welcome, {user.email}</div>;
+}
+
+// Login form with hook
 function LoginPage() {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, error } = useLogin();
   
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -101,18 +121,115 @@ function LoginPage() {
       await login(email, password);
       // Redirect or show success message
     } catch (error) {
-      // Handle error
+      // Error already captured in the hook
     }
   };
   
   return (
     <form onSubmit={handleLogin}>
+      {error && <div className="error">{error.message}</div>}
       {/* Form fields */}
       <button type="submit" disabled={isLoading}>
         {isLoading ? 'Loading...' : 'Login'}
       </button>
     </form>
   );
+}
+
+// Registration with hooks
+function RegisterPage() {
+  const { register, isLoading, error } = useRegister();
+  
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      await register(name, email, password);
+      // Show verification message
+    } catch (error) {
+      // Error handling
+    }
+  };
+  
+  // Form implementation
+}
+
+// Password reset
+function PasswordResetPage() {
+  const { sendResetEmail, resetPassword, isLoading, error } = usePasswordReset();
+  
+  // Implementation for request form and reset form
+}
+```
+
+### Advanced Provider Configuration
+
+The `RipTideProvider` accepts configuration options to customize the authentication behavior:
+
+```jsx
+<RipTideProvider config={{
+  // Supabase connection
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  
+  // Rate limiting options
+  rateLimit: {
+    max: 5,               // Maximum attempts
+    windowMs: 15 * 60000, // Time window in milliseconds (15 minutes)
+  },
+  
+  // CAPTCHA configuration
+  enableCaptcha: true,
+  captchaProvider: 'recaptcha', // or 'hcaptcha'
+}}>
+  <Component {...pageProps} />
+</RipTideProvider>
+```
+
+### Security Features
+
+#### Rate Limiting
+
+RipTide includes built-in rate limiting to protect against brute force attacks. This can be configured in the provider:
+
+```jsx
+<RipTideProvider config={{
+  rateLimit: {
+    max: 5,                // Maximum attempts
+    windowMs: 15 * 60000,  // Time window (15 minutes)
+  }
+}}>
+  {/* ... */}
+</RipTideProvider>
+```
+
+#### CAPTCHA Integration
+
+Support for CAPTCHA verification is included and can be enabled in the provider:
+
+```jsx
+<RipTideProvider config={{
+  enableCaptcha: true,
+  captchaProvider: 'recaptcha', // or 'hcaptcha'
+}}>
+  {/* ... */}
+</RipTideProvider>
+```
+
+You'll need to set up a CAPTCHA component in your forms and set the token appropriately.
+
+#### CSRF Protection
+
+CSRF protection is automatically included for all authentication forms. You can generate and validate tokens with:
+
+```jsx
+import { generateCsrfToken, validateCsrfToken } from '@masonator/riptide';
+
+// In your form component
+const csrfToken = generateCsrfToken();
+
+// When submitting
+if (!validateCsrfToken(formToken, storedToken)) {
+  // Handle invalid token
 }
 ```
 
