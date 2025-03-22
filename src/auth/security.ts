@@ -3,6 +3,8 @@
  * Note: For production, consider using a distributed solution like Redis
  */
 
+import { randomBytes } from 'crypto';
+
 // Track login attempts by key (IP or userId)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 

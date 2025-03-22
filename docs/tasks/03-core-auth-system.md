@@ -67,7 +67,7 @@ The authentication system is built with the following components:
 
 3. **CSRF Protection**
    - Token generation and validation
-   - Stateless implementation using crypto-secure methods
+   - Stateless implementation using crypto-secure methods (`crypto.randomBytes`)
    - Applied to all authentication forms
 
 4. **Secure Sessions**

@@ -219,7 +219,7 @@ You'll need to set up a CAPTCHA component in your forms and set the token approp
 
 #### CSRF Protection
 
-CSRF protection is automatically included for all authentication forms. You can generate and validate tokens with:
+CSRF protection is automatically included for all authentication forms. The implementation uses cryptographically secure random tokens generated with `crypto.randomBytes`:
 
 ```jsx
 import { generateCsrfToken, validateCsrfToken } from '@masonator/riptide';
