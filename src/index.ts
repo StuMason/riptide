@@ -8,5 +8,6 @@ export { useSession } from './context/SessionProvider';
 export * from './auth/client';
 export * from './auth/security';
 export * from './components/LoginForm';
+export * from './components/RegisterForm';
 
 // Important: Don't export DB module from main entry point

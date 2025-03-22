@@ -190,6 +190,157 @@ This separation ensures that browser environments don't attempt to load Node.js 
 
 RipTide provides pre-built UI components that integrate with your NextJS application:
 
+## Password Validation
+
+RipTide now uses simplified password validation rules:
+
+- Passwords must be at least 8 characters long
+- Passwords must contain at least one lowercase letter
+
+This makes registration and login more user-friendly while maintaining basic security.
+
+## Usage in Next.js
+
+### Setup
+
+1. Install the package:
+
+```bash
+npm install @masonator/riptide
+```
+
+2. Wrap your application with the `RipTideProvider`:
+
+```tsx
+// app/providers.tsx
+import { RipTideProvider } from '@masonator/riptide';
+
+export function Providers({ children }) {
+  return (
+    <RipTideProvider>
+      {children}
+    </RipTideProvider>
+  );
+}
+```
+
+3. Use the provider in your root layout:
+
+```tsx
+// app/layout.tsx
+import { Providers } from "./providers";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+### Login Page
+
+Create a login page using the `LoginForm` component:
+
+```tsx
+// app/login/page.tsx
+import { LoginForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+export default function LoginPage() {
+  const router = useRouter();
+  
+  const onLoginSuccess = () => {
+    // Redirect to dashboard after successful login
+    router.push('/dashboard');
+  };
+  
+  return (
+    <div className="container mx-auto p-4">
+      <LoginForm onSuccess={onLoginSuccess} />
+    </div>
+  );
+}
+```
+
+### Registration Page
+
+Create a registration page using the `RegisterForm` component:
+
+```tsx
+// app/register/page.tsx
+import { RegisterForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+export default function RegisterPage() {
+  const router = useRouter();
+  
+  const onRegisterSuccess = () => {
+    // Redirect to login after successful registration
+    router.push('/login');
+  };
+  
+  return (
+    <div className="container mx-auto p-4">
+      <RegisterForm onSuccess={onRegisterSuccess} />
+    </div>
+  );
+}
+```
+
+### Protected Routes
+
+Protect routes that require authentication:
+
+```tsx
+// app/dashboard/page.tsx
+import { useAuth } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+export default function Dashboard() {
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, loading, router]);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div className="container mx-auto p-4">
+      <h1>Dashboard</h1>
+      <p>This is a protected route. Only authenticated users can see this.</p>
+    </div>
+  );
+}
+```
+
+## API Reference
+
+### Components
+
+- `LoginForm`: Renders a login form with email and password fields
+- `RegisterForm`: Renders a registration form with name, email, and password fields
+- `RipTideProvider`: Authentication context provider
+
+### Hooks
+
+- `useAuth()`: Returns authentication state and methods:
+  - `isAuthenticated`: Boolean indicating if user is logged in
+  - `loading`: Boolean indicating if auth state is loading
+  - `login(email, password)`: Login method
+  - `register(name, email, password)`: Registration method
+  - `logout()`: Logout method
+
 ### LoginForm Component
 
 A complete login form with CSRF protection, rate limiting feedback, and CAPTCHA integration:
