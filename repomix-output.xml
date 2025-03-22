@@ -1,4 +1,4 @@
-This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
 The content has been processed where content has been compressed (code blocks are separated by ⋮---- delimiter).
 
 <file_summary>
@@ -32,6 +32,7 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: ./docs
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Content has been compressed - code blocks are separated by ⋮---- delimiter
@@ -45,15 +46,37 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+.cursor/
+  rules/
+    rules/
+      documentation-and-techstack.mdc
+      mcp-tool-usage.mdc
+      typescript-nextjs-node.mdc
+  coding-best-practices.md
+  database-rules.md
+  documentation-and-techstack.md
+  mcp-tool-usage.md
 .github/
   workflows/
     ci.yml
     sec-check.yml
+.husky/
+  pre-commit
 src/
   auth/
     middleware.ts
   context/
     RipTideProvider.tsx
+  db/
+    migrations/
+      001_profiles.sql
+      002_api_tokens.sql
+      003_user_sessions.sql
+    cli.ts
+    index.ts
+    post-install.js
+    setup-wizard.ts
+    types.ts
   test/
     setup.ts
   index.ts
@@ -72,6 +95,555 @@ vitest.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/db/post-install.js">
+/**
+ * RipTide Post-Install Script
+ * 
+ * This script runs automatically after package installation to:
+ * 1. Check if Supabase CLI is installed
+ * 2. Initialize Supabase if needed (only if --auto-init flag is used)
+ * 3. Copy migrations from package to project
+ * 4. Optionally run migrations (only if --run-migrations flag is used)
+ */
+⋮----
+// Configuration from arguments
+const args = process.argv.slice(2);
+const AUTO_INIT = args.includes('--auto-init');
+const RUN_MIGRATIONS = args.includes('--run-migrations');
+const TARGET_DIR = process.cwd();
+const PACKAGE_DIR = path.join(__dirname, '..', '..');
+⋮----
+// Log helpers
+function log(message, type = 'info') {
+⋮----
+console.log(`${prefix} ${message}`);
+⋮----
+// Check if Supabase CLI is installed
+function checkSupabaseCli() {
+⋮----
+execSync('supabase --version', { stdio: 'ignore' });
+⋮----
+// Check if Supabase is initialized in project
+function isSupabaseInitialized() {
+return fs.existsSync(path.join(TARGET_DIR, 'supabase'));
+⋮----
+// Main function
+async function main() {
+⋮----
+log('Running RipTide post-install setup...');
+⋮----
+// Check for Supabase CLI
+if (!checkSupabaseCli()) {
+log('Supabase CLI is not installed. Some features may not work.', 'warning');
+log('To install Supabase CLI, run: npm install -g supabase', 'info');
+process.exit(0);
+⋮----
+// Initialize Supabase if needed and auto-init is enabled
+if (!isSupabaseInitialized()) {
+⋮----
+log('Initializing Supabase for your project...', 'info');
+⋮----
+const result = spawnSync('npx', ['riptide-migrations', 'init'], {
+⋮----
+throw new Error('Failed to initialize Supabase project');
+⋮----
+log('Supabase project initialized successfully.', 'success');
+⋮----
+log('Supabase is not initialized in this project.', 'warning');
+log('To initialize, run: npx riptide-migrations init', 'info');
+⋮----
+// Copy migrations using the CLI
+const migrationsDir = path.join(PACKAGE_DIR, 'src', 'db', 'migrations');
+⋮----
+if (!fs.existsSync(migrationsDir)) {
+log('No migrations to copy.', 'info');
+⋮----
+log('Copying migrations from package...', 'info');
+⋮----
+args.push('--run-migrations');
+⋮----
+const result = spawnSync('npx', args, {
+⋮----
+throw new Error('Failed to copy migrations');
+⋮----
+log('Migrations set up successfully.', 'success');
+⋮----
+log('RipTide post-install setup completed successfully.', 'success');
+⋮----
+log('To apply migrations, run: npx riptide-migrations push', 'info');
+⋮----
+log(error.message, 'error');
+process.exit(1);
+⋮----
+// Run the script
+main();
+</file>
+
+<file path="src/db/setup-wizard.ts">
+/**
+ * Database setup wizard helpers for RipTide
+ *
+ * This module provides utilities for the setup wizard to manage database migrations.
+ */
+import {
+  initializeSupabase,
+  applyMigrations,
+  listMigrations,
+  parseMigrationStatus,
+  isSupabaseCliInstalled,
+  isSupabaseInitialized,
+  validateSupabaseEnv,
+  hasPendingMigrations,
+  copyMigrations,
+} from './index';
+import { existsSync, writeFileSync } from 'fs';
+import { join } from 'path';
+⋮----
+/**
+ * Setup steps for database configuration
+ */
+export enum SetupStep {
+  CHECK_CLI = 'check_cli',
+  INITIALIZE_PROJECT = 'initialize_project',
+  CHECK_ENV_VARS = 'check_env_vars',
+  RUN_MIGRATIONS = 'run_migrations',
+  COMPLETE = 'complete',
+}
+⋮----
+/**
+ * Database setup wizard configuration
+ */
+export interface DbSetupConfig {
+  /**
+   * Project directory
+   * @default process.cwd()
+   */
+  projectDir?: string;
+
+  /**
+   * Whether to auto-initialize Supabase if not already initialized
+   * @default true
+   */
+  autoInitialize?: boolean;
+
+  /**
+   * Whether to auto-run migrations if pending
+   * @default true
+   */
+  autoRunMigrations?: boolean;
+
+  /**
+   * Source directory containing migrations to copy
+   * If provided, migrations will be copied from this directory to the Supabase project
+   */
+  migrationSourceDir?: string;
+
+  /**
+   * Callback for logging setup progress
+   */
+  onLog?: (message: string, type: 'info' | 'success' | 'error' | 'warning') => void;
+}
+⋮----
+/**
+   * Project directory
+   * @default process.cwd()
+   */
+⋮----
+/**
+   * Whether to auto-initialize Supabase if not already initialized
+   * @default true
+   */
+⋮----
+/**
+   * Whether to auto-run migrations if pending
+   * @default true
+   */
+⋮----
+/**
+   * Source directory containing migrations to copy
+   * If provided, migrations will be copied from this directory to the Supabase project
+   */
+⋮----
+/**
+   * Callback for logging setup progress
+   */
+⋮----
+/**
+ * Setup status result
+ */
+export interface SetupStatus {
+  /**
+   * Current setup step
+   */
+  currentStep: SetupStep;
+
+  /**
+   * Whether the setup was successful
+   */
+  success: boolean;
+
+  /**
+   * Setup status message
+   */
+  message: string;
+
+  /**
+   * Error if setup failed
+   */
+  error?: Error;
+
+  /**
+   * Environment details
+   */
+  env: {
+    /**
+     * Whether Supabase CLI is installed
+     */
+    hasSupabaseCli: boolean;
+
+    /**
+     * Whether Supabase is initialized
+     */
+    hasSupabaseInit: boolean;
+
+    /**
+     * Environment variables status
+     */
+    envStatus: {
+      valid: boolean;
+      missingVars: string[];
+      message: string;
+    };
+
+    /**
+     * Whether migrations are pending
+     */
+    migrationsPending: boolean;
+
+    /**
+     * Migration status details
+     */
+    migrationStatus?: {
+      total: number;
+      applied: number;
+      pending: number;
+    };
+  };
+}
+⋮----
+/**
+   * Current setup step
+   */
+⋮----
+/**
+   * Whether the setup was successful
+   */
+⋮----
+/**
+   * Setup status message
+   */
+⋮----
+/**
+   * Error if setup failed
+   */
+⋮----
+/**
+   * Environment details
+   */
+⋮----
+/**
+     * Whether Supabase CLI is installed
+     */
+⋮----
+/**
+     * Whether Supabase is initialized
+     */
+⋮----
+/**
+     * Environment variables status
+     */
+⋮----
+/**
+     * Whether migrations are pending
+     */
+⋮----
+/**
+     * Migration status details
+     */
+⋮----
+/**
+ * Default log function that outputs to console
+ */
+function defaultLogFn(message: string, type: 'info' | 'success' | 'error' | 'warning')
+⋮----
+// eslint-disable-next-line no-console
+⋮----
+/**
+ * Check database setup status
+ * @param config Setup configuration
+ * @returns Setup status
+ */
+export async function checkDatabaseSetup(config: DbSetupConfig =
+⋮----
+// Initialize result
+⋮----
+// Step 1: Check if Supabase CLI is installed
+⋮----
+// Step 2: Check if Supabase is initialized
+⋮----
+// If auto-initialize is enabled, initialize Supabase
+⋮----
+// Copy migrations if source directory is provided
+⋮----
+// Continue with the setup, as this is not a critical failure
+⋮----
+// Step 3: Check environment variables
+⋮----
+// Check for .env file to suggest adding variables
+⋮----
+// Step 4: Check migrations status
+⋮----
+// If auto-run migrations is enabled, run them
+⋮----
+// Update migration status
+⋮----
+// Setup complete
+⋮----
+/**
+ * Run database setup wizard
+ * @param config Setup configuration
+ * @returns Setup status
+ */
+export async function runDatabaseSetup(config: DbSetupConfig =
+⋮----
+/**
+ * Create needed helper functions for the setup wizard UI
+ * @param projectDir Project directory
+ * @returns Helper functions
+ */
+export function createSetupWizardHelpers(projectDir: string = process.cwd())
+⋮----
+/**
+     * Check if database migrations are needed
+     */
+async checkMigrationsNeeded(): Promise<boolean>
+⋮----
+/**
+     * Apply pending migrations
+     */
+async applyPendingMigrations(): Promise<boolean>
+⋮----
+/**
+     * Check if Supabase is properly configured
+     */
+async checkSupabaseConfig(): Promise<
+⋮----
+/**
+     * Initialize Supabase project
+     */
+async initializeSupabaseProject(): Promise<boolean>
+⋮----
+/**
+     * Copy migrations from source directory to Supabase project
+     */
+async copyMigrationsToProject(sourceDir: string): Promise<boolean>
+</file>
+
+<file path=".cursor/rules/rules/documentation-and-techstack.mdc">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Documentation Usage
+
+- Always consult the project's **`./docs/tasks/*`** file located at the project root for clear understanding of goals and features.
+- Review all additional documentation files within the **`docs`** directory provided with the project.
+- If additional or updated documentation is required, use MCP servers (Brave Search, Puppeteer, FireCrawl) to locate official and current sources online.
+
+## Technical Stack Compliance
+
+- **Adhere strictly to the project's established technology stack.**
+- Do not introduce new technologies unless explicitly instructed and justified.
+- You may suggest alternative technologies if beneficial, but never implement them without user confirmation.
+</file>
+
+<file path=".cursor/rules/rules/mcp-tool-usage.mdc">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Sequential Thinking
+
+- Use **Sequential Thinking MCP** for debugging, troubleshooting, complex problem-solving, and detailed project planning.
+- Avoid excessive recursive calls; trigger intelligently only when new progress or significant information is possible.
+
+## Information Gathering (Brave Search, Puppeteer, FireCrawl)
+
+- Use **Brave Search, Puppeteer, and FireCrawl MCP servers** when troubleshooting, searching documentation, or exploring similar user issues.
+- Combine effectively with **Sequential Thinking MCP** to refine solutions and acquire up-to-date information.
+- Prioritize reliable and concise sources.
+</file>
+
+<file path=".cursor/rules/rules/typescript-nextjs-node.mdc">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+  You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+  ## Coding Best Practices
+
+- **Do not modify code or UI elements that already work**, unless explicitly instructed.
+- Avoid duplicating existing functionality; reuse working components whenever possible.
+- Write comprehensive tests for all new or modified functionality.
+- **Never unintentionally delete data or code**; confirm explicitly before destructive actions.
+- Commit frequently to maintain a reliable project history.
+- Always ask clarifying questions if tasks or requirements are unclear.
+
+ALWAY complete your tasks by running `npm run format`, `npm run lint`, `npm run test` and `npm run build` and fix any issues that may arise.
+
+## User Interface (UI)
+
+- **Never change or affect the UI unintentionally.** Only alter UI components if explicitly instructed or clearly part of the assigned task.
+- Always ensure UI changes are fully tested and validated.
+
+  
+  Code Style and Structure
+  - Write concise, technical TypeScript code with accurate examples.
+  - Use functional and declarative programming patterns; avoid classes.
+  - Prefer iteration and modularization over code duplication.
+  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+  - Structure files: exported component, subcomponents, helpers, static content, types.
+  
+  Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Favor named exports for components.
+  
+  TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
+  
+  Syntax and Formatting
+  - Use the "function" keyword for pure functions.
+  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+  - Use declarative JSX.
+  
+  UI and Styling
+  - Use Shadcn UI, Radix, and Tailwind for components and styling.
+  - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+  
+  Performance Optimization
+  - Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+  - Wrap client components in Suspense with fallback.
+  - Use dynamic loading for non-critical components.
+  - Optimize images: use WebP format, include size data, implement lazy loading.
+  
+  Key Conventions
+  - Use 'nuqs' for URL search parameter state management.
+  - Optimize Web Vitals (LCP, CLS, FID).
+  - Limit 'use client':
+    - Favor server components and Next.js SSR.
+    - Use only for Web API access in small components.
+    - Avoid for data fetching or state management.
+  
+  Follow Next.js docs for Data Fetching, Rendering, and Routing.
+</file>
+
+<file path=".cursor/coding-best-practices.md">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Coding Best Practices
+
+- **Do not modify code or UI elements that already work**, unless explicitly instructed.
+- Avoid duplicating existing functionality; reuse working components whenever possible.
+- Write comprehensive tests for all new or modified functionality.
+- **Never unintentionally delete data or code**; confirm explicitly before destructive actions.
+- Commit frequently to maintain a reliable project history.
+- Always ask clarifying questions if tasks or requirements are unclear.
+
+## User Interface (UI)
+
+- **Never change or affect the UI unintentionally.** Only alter UI components if explicitly instructed or clearly part of the assigned task.
+- Always ensure UI changes are fully tested and validated.
+</file>
+
+<file path=".cursor/database-rules.md">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Supabase (Postgres MCP - Development Only)
+
+- Always use the project-specific **Supabase MCP server** for database operations.
+- Use structured relational SQL storage provided by Supabase. Avoid using raw JSON file storage for structured data unless explicitly required by schema design.
+- Database operations are **strictly for the development environment only**.
+- **Never delete or alter critical data without explicit confirmation.** Operations should be carefully controlled.
+</file>
+
+<file path=".cursor/documentation-and-techstack.md">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Documentation Usage
+
+- Always consult the project's **`PRD.md`** file located at the project root for clear understanding of goals and features.
+- Review all additional documentation files within the **`docs`** directory provided with the project.
+- If additional or updated documentation is required, use MCP servers (Brave Search, Puppeteer, FireCrawl) to locate official and current sources online.
+
+## Technical Stack Compliance
+
+- **Adhere strictly to the project's established technology stack.**
+- Do not introduce new technologies unless explicitly instructed and justified.
+- You may suggest alternative technologies if beneficial, but never implement them without user confirmation.
+</file>
+
+<file path=".cursor/mcp-tool-usage.md">
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Sequential Thinking
+
+- Use **Sequential Thinking MCP** for debugging, troubleshooting, complex problem-solving, and detailed project planning.
+- Avoid excessive recursive calls; trigger intelligently only when new progress or significant information is possible.
+
+## Information Gathering (Brave Search, Puppeteer, FireCrawl)
+
+- Use **Brave Search, Puppeteer, and FireCrawl MCP servers** when troubleshooting, searching documentation, or exploring similar user issues.
+- Combine effectively with **Sequential Thinking MCP** to refine solutions and acquire up-to-date information.
+- Prioritize reliable and concise sources.
+
+## Browser Tools
+
+- **Browser Tools MCP** requires user confirmation. Always recommend the user explicitly start the server and ensure a Chromium browser is running before using Browser Tools MCP.
+- Let the user explicitly instruct Cursor when Browser Tools should be used.
+- Remind user to disable puppeteer before attempting to use
+
+## GitHub MCP
+
+- Commit and push code changes to GitHub using the **GitHub MCP server** after every successful test.
+- Ensure commits are clear, descriptive, and incremental.
+- Never overwrite or unintentionally alter files like README.md or other critical documentation without explicit user approval.
+</file>
 
 <file path=".github/workflows/ci.yml">
 name: CI/CD Pipeline
@@ -244,6 +816,190 @@ jobs:
           echo "Please review results in the Security tab"
 </file>
 
+<file path=".husky/pre-commit">
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged to handle formatting and linting
+npx lint-staged
+
+# Run build to ensure the code compiles
+npm run build
+</file>
+
+<file path="src/db/migrations/001_profiles.sql">
+-- Migration: 001_profiles
+-- Description: Create profiles table with RLS
+
+-- Up Migration
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  full_name TEXT,
+  avatar_url TEXT,
+  website TEXT,
+  preferences JSONB DEFAULT '{}'::jsonb,
+  last_sign_in_at TIMESTAMP WITH TIME ZONE,
+  timezone TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+-- Allow users to view their own profile
+CREATE POLICY profiles_select_policy ON profiles
+  FOR SELECT USING (auth.uid() = id);
+
+-- Allow users to update their own profile
+CREATE POLICY profiles_update_policy ON profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Allow service role to manage all profiles
+CREATE POLICY profiles_service_policy ON profiles
+  USING (auth.role() = 'service_role');
+
+-- Create trigger for updated_at
+CREATE OR REPLACE FUNCTION update_profiles_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_profiles_updated_at();
+
+-- Down Migration
+/* -- Uncomment to run down migration
+DROP TRIGGER IF EXISTS profiles_updated_at ON profiles;
+DROP FUNCTION IF EXISTS update_profiles_updated_at();
+DROP POLICY IF EXISTS profiles_service_policy ON profiles;
+DROP POLICY IF EXISTS profiles_update_policy ON profiles;
+DROP POLICY IF EXISTS profiles_select_policy ON profiles;
+DROP TABLE IF EXISTS profiles;
+*/
+</file>
+
+<file path="src/db/migrations/002_api_tokens.sql">
+-- Migration: 002_api_tokens
+-- Description: Create API tokens table with RLS
+
+-- Up Migration
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS api_tokens (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL,
+  scopes TEXT[] DEFAULT '{}'::text[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  is_revoked BOOLEAN DEFAULT false
+);
+
+-- Enable RLS
+ALTER TABLE api_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+-- Allow users to view their own tokens
+CREATE POLICY api_tokens_select_policy ON api_tokens
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Allow users to insert their own tokens
+CREATE POLICY api_tokens_insert_policy ON api_tokens
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to update their own tokens
+CREATE POLICY api_tokens_update_policy ON api_tokens
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Allow users to delete their own tokens
+CREATE POLICY api_tokens_delete_policy ON api_tokens
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Allow service role to manage all tokens
+CREATE POLICY api_tokens_service_policy ON api_tokens
+  USING (auth.role() = 'service_role');
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens(user_id);
+CREATE INDEX IF NOT EXISTS api_tokens_token_hash_idx ON api_tokens(token_hash);
+
+-- Down Migration
+/* -- Uncomment to run down migration
+DROP INDEX IF EXISTS api_tokens_token_hash_idx;
+DROP INDEX IF EXISTS api_tokens_user_id_idx;
+DROP POLICY IF EXISTS api_tokens_service_policy ON api_tokens;
+DROP POLICY IF EXISTS api_tokens_delete_policy ON api_tokens;
+DROP POLICY IF EXISTS api_tokens_update_policy ON api_tokens;
+DROP POLICY IF EXISTS api_tokens_insert_policy ON api_tokens;
+DROP POLICY IF EXISTS api_tokens_select_policy ON api_tokens;
+DROP TABLE IF EXISTS api_tokens;
+*/
+</file>
+
+<file path="src/db/migrations/003_user_sessions.sql">
+-- Migration: 003_user_sessions
+-- Description: Create user sessions table with RLS
+
+-- Up Migration
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  auth_session_id UUID,
+  device_info JSONB DEFAULT '{}'::jsonb,
+  location_info JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  last_active_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  expires_at TIMESTAMP WITH TIME ZONE,
+  is_current BOOLEAN DEFAULT true,
+  is_revoked BOOLEAN DEFAULT false
+);
+
+-- Enable RLS
+ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+-- Allow users to view their own sessions
+CREATE POLICY user_sessions_select_policy ON user_sessions
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Allow users to update their own sessions
+CREATE POLICY user_sessions_update_policy ON user_sessions
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Allow service role to manage all sessions
+CREATE POLICY user_sessions_service_policy ON user_sessions
+  USING (auth.role() = 'service_role');
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS user_sessions_user_id_idx ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS user_sessions_auth_session_id_idx ON user_sessions(auth_session_id);
+
+-- Down Migration
+/* -- Uncomment to run down migration
+DROP INDEX IF EXISTS user_sessions_auth_session_id_idx;
+DROP INDEX IF EXISTS user_sessions_user_id_idx;
+DROP POLICY IF EXISTS user_sessions_service_policy ON user_sessions;
+DROP POLICY IF EXISTS user_sessions_update_policy ON user_sessions;
+DROP POLICY IF EXISTS user_sessions_select_policy ON user_sessions;
+DROP TABLE IF EXISTS user_sessions;
+*/
+</file>
+
 <file path=".eslintrc.js">
 
 </file>
@@ -312,77 +1068,6 @@ docs
 }
 </file>
 
-<file path="package.json">
-{
-  "name": "@riptide/core",
-  "version": "0.1.0",
-  "description": "A complete authentication and user management solution for NextJS applications using Supabase",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "docs": "typedoc",
-    "clean": "rimraf dist"
-  },
-  "keywords": [
-    "authentication",
-    "supabase",
-    "nextjs",
-    "react",
-    "user-management"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-username/riptide.git"
-  },
-  "bugs": {
-    "url": "https://github.com/your-username/riptide/issues"
-  },
-  "homepage": "https://github.com/your-username/riptide#readme",
-  "peerDependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3",
-    "next": ">=13",
-    "react": ">=18",
-    "react-dom": ">=18"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/react": "^14.0.0",
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "jsdom": "^26.0.0",
-    "prettier": "^3.0.0",
-    "rimraf": "^5.0.10",
-    "typedoc": "^0.25.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
-}
-</file>
-
 <file path="tsconfig.json">
 {
   "compilerOptions": {
@@ -425,63 +1110,338 @@ docs
 import { defineConfig } from 'vitest/config';
 </file>
 
-<file path="src/utils.test.ts">
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+<file path="src/db/cli.ts">
+/**
+ * RipTide Migrations CLI
+ *
+ * This CLI tool helps with database migration operations by wrapping Supabase CLI
+ */
 import {
-  createCsrfToken,
-  isValidEmail,
-  validatePassword,
-  sanitizeInput,
-  isValidUrl,
-  getBrowserFingerprint,
-  formatRelativeTime,
-} from './utils';
+  createMigration,
+  applyMigrations,
+  listMigrations,
+  resetDatabase,
+  initializeSupabase,
+  isSupabaseCliInstalled,
+  isSupabaseInitialized,
+  parseMigrationStatus,
+  validateSupabaseEnv,
+  hasPendingMigrations,
+  copyMigrations,
+  handlePostInstall,
+} from './index';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 ⋮----
-// uppercase, lowercase, numbers (no special chars)
+/**
+ * Checks whether the environment is properly set up
+ * @returns Object with environment status
+ */
+async function checkEnvironment()
 ⋮----
-// uppercase, lowercase, special (no numbers)
+// Check if package.json exists
 ⋮----
-// Store original values
+// Determine if this is a Next.js project
 ⋮----
-// Mock window.navigator
+// Ignore errors, assume not a Next.js project
 ⋮----
-// Mock window.screen
+// Check Supabase CLI installation
 ⋮----
-// Mock Intl
+// Check Supabase initialization
 ⋮----
-// Restore original values
+// Check environment variables
 ⋮----
-// Simulate server-side rendering
+// Check migrations status
 ⋮----
-// Store original Date constructor
+/**
+ * Output formatted message
+ * @param message Message to output
+ * @param type Message type (info, success, error, warning)
+ */
+function outputMessage(message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info')
 ⋮----
-// Mock current date to be fixed
+// eslint-disable-next-line no-console
 ⋮----
-constructor(...args: any[])
+// Main function
+async function main()
 ⋮----
-// Restore original Date constructor
+// Variables for command results
 ⋮----
-const date = new Date('2023-01-01T11:59:30Z'); // 30 seconds ago
+// Execute the appropriate command
 ⋮----
-const date1 = new Date('2023-01-01T11:59:00Z'); // 1 minute ago
+// Output environment status
 ⋮----
-const date2 = new Date('2023-01-01T11:55:00Z'); // 5 minutes ago
+// Get detailed migration status
 ⋮----
-const date1 = new Date('2023-01-01T11:00:00Z'); // 1 hour ago
+// Display parsed migration status
 ⋮----
-const date2 = new Date('2023-01-01T07:00:00Z'); // 5 hours ago
+// Check for pending migrations first
 ⋮----
-const date1 = new Date('2022-12-31T12:00:00Z'); // 1 day ago
+// Wait 5 seconds to give user time to cancel
 ⋮----
-const date2 = new Date('2022-12-25T12:00:00Z'); // 7 days ago
+// Determine the package migrations directory
 ⋮----
-const date1 = new Date('2022-12-01T12:00:00Z'); // 1 month ago
+// Execute post-install with optional target directory
 ⋮----
-const date2 = new Date('2022-09-01T12:00:00Z'); // 4 months ago
+// Run the main function
+</file>
+
+<file path="src/db/index.ts">
+/**
+ * Database utilities for RipTide
+ * @packageDocumentation
+ */
 ⋮----
-const date1 = new Date('2022-01-01T12:00:00Z'); // 1 year ago
+import { SupabaseClient } from '@supabase/supabase-js';
+import { execSync } from 'child_process';
+import { existsSync, readdirSync, mkdirSync, copyFileSync } from 'fs';
+import { join, dirname } from 'path';
+import {
+  SqlExecutionResult,
+  CliCommandResult,
+  MigrationOptions,
+  MigrationStatus,
+  MigrationRecord,
+} from './types';
 ⋮----
-const date2 = new Date('2020-01-01T12:00:00Z'); // 3 years ago
+// Re-export types
+⋮----
+/**
+ * Checks if Supabase CLI is installed
+ * @returns True if Supabase CLI is available
+ */
+export function isSupabaseCliInstalled(): boolean
+⋮----
+/**
+ * Checks if project has Supabase initialized
+ * @param cwd Current working directory
+ * @returns True if Supabase is initialized in the project
+ */
+export function isSupabaseInitialized(cwd: string = process.cwd()): boolean
+⋮----
+/**
+ * Executes a Supabase CLI command
+ * @param command The Supabase CLI command to execute
+ * @param options Additional options
+ * @returns The command output
+ */
+export function executeSupabaseCli(
+  command: string,
+  options: { cwd?: string; silent?: boolean } = {}
+): CliCommandResult
+⋮----
+// Check if Supabase CLI is installed
+⋮----
+/**
+ * Creates a new migration file
+ * @param name The name of the migration
+ * @param options Additional options
+ */
+export function createMigration(name: string, options: MigrationOptions =
+⋮----
+// Ensure Supabase is initialized
+⋮----
+/**
+ * Lists all migrations and their status
+ * @param options Additional options
+ * @returns Migration status information
+ */
+export function listMigrations(options: MigrationOptions =
+⋮----
+// Ensure Supabase is initialized
+⋮----
+/**
+ * Parses migration list output into structured data
+ * @param output Output from migration list command
+ * @returns Structured migration data
+ */
+export function parseMigrationStatus(output: string): MigrationStatus
+⋮----
+// Skip header line if present
+⋮----
+// Parse migration information
+⋮----
+/**
+ * Checks if there are pending migrations
+ * @param options Additional options
+ * @returns True if there are pending migrations
+ */
+export async function hasPendingMigrations(options: MigrationOptions =
+⋮----
+/**
+ * Applies all pending migrations
+ * @param options Additional options
+ */
+export function applyMigrations(options: MigrationOptions =
+⋮----
+// Ensure Supabase is initialized
+⋮----
+/**
+ * Resets the database and reapplies all migrations
+ * @param options Additional options
+ */
+export function resetDatabase(options: MigrationOptions =
+⋮----
+// Ensure Supabase is initialized
+⋮----
+/**
+ * Executes raw SQL against the database
+ * @param client Supabase client
+ * @param query SQL query to execute
+ */
+export async function executeSQL(
+  client: SupabaseClient,
+  query: string
+): Promise<SqlExecutionResult>
+⋮----
+/**
+ * Initializes Supabase project structure in the current directory if it doesn't exist
+ * @param options Additional options
+ */
+export function initializeSupabase(options: MigrationOptions =
+⋮----
+// Check if Supabase is already initialized
+⋮----
+/**
+ * Validates Supabase environment variables
+ * @returns Object with validation results
+ */
+export function validateSupabaseEnv():
+⋮----
+/**
+ * Copy migrations from source directory to target Supabase directory
+ * @param options Options for copying migrations
+ * @returns Result with success status and error if any
+ */
+export function copyMigrations(options: {
+  /**
+   * Source directory containing migrations
+   */
+  sourceDir: string;
+  /**
+   * Target project directory where Supabase is initialized
+   * @default process.cwd()
+   */
+  cwd?: string;
+}): CliCommandResult
+⋮----
+/**
+   * Source directory containing migrations
+   */
+⋮----
+/**
+   * Target project directory where Supabase is initialized
+   * @default process.cwd()
+   */
+⋮----
+// Ensure target directory exists
+⋮----
+// Get list of migration files
+⋮----
+// Copy each migration file
+⋮----
+// Skip if file already exists in target
+⋮----
+/**
+ * Handle post-installation setup for the package
+ * @param options Options for post-install setup
+ * @returns Result with success status and error if any
+ */
+export function handlePostInstall(options: {
+  /**
+   * Package migrations directory
+   */
+  packageMigrationsDir: string;
+  /**
+   * Target project directory
+   * @default process.cwd()
+   */
+  projectDir?: string;
+  /**
+   * Whether to run migrations automatically
+   * @default false
+   */
+  runMigrations?: boolean;
+}): CliCommandResult
+⋮----
+/**
+   * Package migrations directory
+   */
+⋮----
+/**
+   * Target project directory
+   * @default process.cwd()
+   */
+⋮----
+/**
+   * Whether to run migrations automatically
+   * @default false
+   */
+⋮----
+// Check if Supabase CLI is installed
+⋮----
+// Check if Supabase is initialized in the project
+⋮----
+// Initialize Supabase if needed
+⋮----
+// Copy migrations to the target project
+⋮----
+// Run migrations if requested
+</file>
+
+<file path="src/db/types.ts">
+/**
+ * Result of executing a Supabase CLI command
+ */
+export interface CliCommandResult {
+  success: boolean;
+  output?: string;
+  error?: Error;
+  message?: string;
+}
+⋮----
+/**
+ * Result of executing SQL
+ */
+export interface SqlExecutionResult {
+  success: boolean;
+  data?: unknown;
+  error?: unknown;
+}
+⋮----
+/**
+ * Options for executing a CLI command
+ */
+export interface CliCommandOptions {
+  cwd?: string;
+  silent?: boolean;
+}
+⋮----
+/**
+ * Migration options for creating a new migration
+ */
+export interface MigrationOptions {
+  cwd?: string;
+}
+⋮----
+/**
+ * Single migration record with status information
+ */
+export interface MigrationRecord {
+  name: string;
+  timestamp: string;
+  isApplied: boolean;
+}
+⋮----
+/**
+ * Migration status information with applied and pending migrations
+ */
+export interface MigrationStatus {
+  all?: MigrationRecord[];
+  applied: MigrationRecord[];
+  pending: MigrationRecord[];
+  hasPendingMigrations: boolean;
+}
 </file>
 
 <file path="src/auth/middleware.ts">
@@ -615,17 +1575,6 @@ import { cleanup } from '@testing-library/react';
 // Import jest-dom without assigning it
 ⋮----
 // Automatically clean up after each test
-</file>
-
-<file path="src/index.ts">
-/**
- * RipTide - A complete authentication and user management solution for NextJS applications using Supabase
- * @packageDocumentation
- */
-⋮----
-// Re-export components and utilities as they are developed
-⋮----
-// This will be our public API - we'll add more exports as we develop them
 </file>
 
 <file path="src/types.ts">
@@ -871,8 +1820,173 @@ export function getBrowserFingerprint(): string
 export function formatRelativeTime(date: Date | string): string
 </file>
 
+<file path="package.json">
+{
+  "name": "@riptide/core",
+  "version": "0.1.0",
+  "description": "A complete authentication and user management solution for NextJS applications using Supabase",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "riptide-migrations": "dist/db/cli.js"
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "docs": "typedoc",
+    "clean": "rimraf dist",
+    "migrate:status": "ts-node src/db/cli.ts status",
+    "migrate:init": "ts-node src/db/cli.ts init",
+    "migrate:new": "ts-node src/db/cli.ts new",
+    "migrate:list": "ts-node src/db/cli.ts list",
+    "migrate:push": "ts-node src/db/cli.ts push",
+    "migrate:reset": "ts-node src/db/cli.ts reset",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint"
+    ]
+  },
+  "keywords": [
+    "authentication",
+    "supabase",
+    "nextjs",
+    "react",
+    "user-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/riptide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/riptide/issues"
+  },
+  "homepage": "https://github.com/your-username/riptide#readme",
+  "peerDependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.39.3",
+    "next": ">=13",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.39.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.0.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.1.7",
+    "jsdom": "^26.0.0",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.10",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
+</file>
+
+<file path="src/utils.test.ts">
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  createCsrfToken,
+  isValidEmail,
+  validatePassword,
+  sanitizeInput,
+  isValidUrl,
+  getBrowserFingerprint,
+  formatRelativeTime,
+} from './utils';
+⋮----
+// uppercase, lowercase, numbers (no special chars)
+⋮----
+// uppercase, lowercase, special (no numbers)
+⋮----
+// Store original values
+⋮----
+// Mock window.navigator
+⋮----
+// Mock window.screen
+⋮----
+// Mock Intl
+⋮----
+// Restore original values
+⋮----
+// Simulate server-side rendering
+⋮----
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+⋮----
+// Store original Date constructor
+⋮----
+// Mock current date to be fixed
+⋮----
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment
+// @ts-ignore
+⋮----
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+constructor(...args: any[])
+⋮----
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+⋮----
+// Restore original Date constructor
+⋮----
+const date = new Date('2023-01-01T11:59:30Z'); // 30 seconds ago
+⋮----
+const date1 = new Date('2023-01-01T11:59:00Z'); // 1 minute ago
+⋮----
+const date2 = new Date('2023-01-01T11:55:00Z'); // 5 minutes ago
+⋮----
+const date1 = new Date('2023-01-01T11:00:00Z'); // 1 hour ago
+⋮----
+const date2 = new Date('2023-01-01T07:00:00Z'); // 5 hours ago
+⋮----
+const date1 = new Date('2022-12-31T12:00:00Z'); // 1 day ago
+⋮----
+const date2 = new Date('2022-12-25T12:00:00Z'); // 7 days ago
+⋮----
+const date1 = new Date('2022-12-01T12:00:00Z'); // 1 month ago
+⋮----
+const date2 = new Date('2022-09-01T12:00:00Z'); // 4 months ago
+⋮----
+const date1 = new Date('2022-01-01T12:00:00Z'); // 1 year ago
+⋮----
+const date2 = new Date('2020-01-01T12:00:00Z'); // 3 years ago
+</file>
+
+<file path="src/index.ts">
+// Export types
+⋮----
+// Export utils
+⋮----
+// Export database functions
+</file>
+
 <file path="README.md">
-# RipTide
+# RipTide Core
 
 A complete authentication and user management solution for NextJS applications using Supabase.
 
@@ -888,7 +2002,210 @@ A complete authentication and user management solution for NextJS applications u
 ## Installation
 
 ```bash
-npm install @masonator/riptide
+npm install @riptide/core
+```
+
+## Database Migrations
+
+RipTide Core provides a comprehensive solution for managing database schemas and migrations using Supabase.
+
+### Features
+
+- **SQL Migration Files**: Pre-built schema definitions with Row Level Security (RLS)
+- **CLI Commands**: Simple commands for managing migrations
+- **Migration Status Checking**: Check which migrations have been applied
+- **Setup Wizard Integration**: Seamlessly integrate with the RipTide setup wizard
+- **Local Development**: Works with local Supabase instances
+
+### Prerequisites
+
+1. Install Supabase CLI globally or use with npx:
+
+```bash
+# Global installation
+npm install -g supabase
+
+# Or use with npx (no installation required)
+npx supabase
+```
+
+2. Add the required environment variables to your project:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Using Migration Commands
+
+RipTide provides convenient command-line tools for managing migrations:
+
+```bash
+# Check environment and migration status
+npx riptide-migrations status
+
+# Initialize Supabase project structure
+npx riptide-migrations init
+
+# Create a new migration
+npx riptide-migrations new create_custom_table
+
+# List all migrations and their status
+npx riptide-migrations list
+
+# Apply pending migrations
+npx riptide-migrations push
+
+# Reset database and reapply migrations (use with caution)
+npx riptide-migrations reset
+```
+
+### Setup Wizard Integration
+
+RipTide's database migrations are designed to integrate seamlessly with the setup wizard:
+
+```typescript
+import { runDatabaseSetup } from '@riptide/core';
+
+// Run the database setup with auto-initialization and migration
+const setupResult = await runDatabaseSetup({
+  projectDir: './my-project',
+  autoInitialize: true,
+  autoRunMigrations: true,
+  onLog: (message, type) => {
+    console.log(`[${type}] ${message}`);
+  }
+});
+
+if (setupResult.success) {
+  console.log('Database setup completed successfully');
+} else {
+  console.error('Database setup failed:', setupResult.message);
+}
+```
+
+For more granular control, you can use the individual helper functions:
+
+```typescript
+import { 
+  checkDatabaseSetup, 
+  createSetupWizardHelpers 
+} from '@riptide/core';
+
+// Get the status without making any changes
+const status = await checkDatabaseSetup({ 
+  autoInitialize: false,
+  autoRunMigrations: false 
+});
+
+// Create setup wizard helpers
+const helpers = createSetupWizardHelpers();
+
+// Check if migrations are needed
+const needsMigrations = await helpers.checkMigrationsNeeded();
+
+// Apply pending migrations if needed
+if (needsMigrations) {
+  const success = await helpers.applyPendingMigrations();
+}
+```
+
+### Database Schema
+
+RipTide Core includes the following pre-built schemas:
+
+1. **Profiles Table**: Extends Supabase auth.users with profile information
+   - Links to `auth.users` with ON DELETE CASCADE
+   - Stores user profile information like name, avatar, and preferences
+   - Includes RLS policies for secure access
+
+2. **API Tokens Table**: Manages user-generated API tokens
+   - Stores token names, hashes, scopes, and expiration dates
+   - Tracks token usage with last_used_at timestamp
+   - Includes revocation capabilities
+
+3. **User Sessions Table**: Tracks active user sessions
+   - Stores device and location information
+   - Enables multi-device login tracking
+   - Supports session revocation
+
+### Programmatic Usage
+
+You can use RipTide's migration utilities programmatically in your own code:
+
+```typescript
+import { 
+  initializeSupabase,
+  isSupabaseCliInstalled,
+  isSupabaseInitialized,
+  createMigration, 
+  applyMigrations, 
+  listMigrations, 
+  resetDatabase,
+  hasPendingMigrations,
+  parseMigrationStatus,
+  validateSupabaseEnv
+} from '@riptide/core';
+
+// Check if Supabase CLI is installed
+const hasSupabaseCli = isSupabaseCliInstalled();
+
+// Check if project has Supabase initialized
+const hasSupabaseInit = isSupabaseInitialized();
+
+// Check environment variables
+const envStatus = validateSupabaseEnv();
+if (!envStatus.valid) {
+  console.log(`Missing environment variables: ${envStatus.missingVars.join(', ')}`);
+}
+
+// Initialize Supabase project if needed
+if (!hasSupabaseInit) {
+  const initResult = initializeSupabase();
+  if (initResult.success) {
+    console.log('Supabase project initialized');
+  }
+}
+
+// Create a new migration
+const createResult = createMigration('create_custom_table');
+if (createResult.success) {
+  console.log('Created new migration file');
+}
+
+// Check if migrations need to be applied
+const needsMigrations = await hasPendingMigrations();
+if (needsMigrations) {
+  console.log('Migrations need to be applied');
+}
+
+// Get detailed migration status
+const listResult = listMigrations();
+if (listResult.success && listResult.output) {
+  const status = parseMigrationStatus(listResult.output);
+  console.log(`Applied migrations: ${status.applied.length}`);
+  console.log(`Pending migrations: ${status.pending.length}`);
+}
+
+// Apply pending migrations
+const applyResult = applyMigrations();
+if (applyResult.success) {
+  console.log('Applied all pending migrations');
+}
+
+// Execute custom SQL (requires Supabase client)
+import { createClient } from '@supabase/supabase-js';
+import { executeSQL } from '@riptide/core';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
+
+const result = await executeSQL(supabase, 'SELECT * FROM profiles');
+if (result.success) {
+  console.log(result.data);
+}
 ```
 
 ## Quick Start
@@ -909,21 +2226,6 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
-```
-
-```jsx
-// middleware.ts
-import { authMiddleware } from '@riptide/core';
-
-export default authMiddleware({
-  publicRoutes: ['/login', '/register', '/reset-password'],
-  authPage: '/login',
-  defaultProtectedRoute: '/dashboard',
-});
-
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
 ```
 
 ## Usage

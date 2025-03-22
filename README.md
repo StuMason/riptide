@@ -19,134 +19,190 @@ npm install @riptide/core
 
 ## Database Migrations
 
-RipTide Core provides a simple wrapper around Supabase CLI migrations to make database schema management seamless with your NextJS and Supabase applications.
+RipTide Core provides a comprehensive solution for managing database schemas and migrations using Supabase.
+
+### Features
+
+- **SQL Migration Files**: Pre-built schema definitions with Row Level Security (RLS)
+- **CLI Commands**: Simple commands for managing migrations
+- **Migration Status Checking**: Check which migrations have been applied
+- **Setup Wizard Integration**: Seamlessly integrate with the RipTide setup wizard
+- **Local Development**: Works with local Supabase instances
 
 ### Prerequisites
 
-1. Ensure you have Supabase CLI installed globally or as a dev dependency:
+1. Install Supabase CLI globally or use with npx:
 
 ```bash
 # Global installation
 npm install -g supabase
 
-# Or as a dev dependency
-npm install supabase --save-dev
+# Or use with npx (no installation required)
+npx supabase
 ```
 
-2. Initialize Supabase in your project (if not already done):
-
-```bash
-npx supabase init
-```
-
-### Using RipTide Migration Commands
-
-RipTide provides convenient npm scripts for managing migrations:
-
-```bash
-# Initialize Supabase project structure
-npm run migrate:init
-
-# Create a new migration
-npm run migrate:new create_profiles_table
-
-# List all migrations and their status
-npm run migrate:list
-
-# Apply pending migrations
-npm run migrate:push
-
-# Reset the database and reapply all migrations (use with caution)
-npm run migrate:reset
-```
-
-### Migration File Structure
-
-When you create a new migration, Supabase CLI will create a timestamped SQL file in the `supabase/migrations` directory:
-
-```sql
--- Example migration file: supabase/migrations/20240321000000_create_profiles_table.sql
-
--- Create profiles table with RLS
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  display_name TEXT,
-  avatar_url TEXT,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Set up Row Level Security (RLS)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Create policies
-CREATE POLICY "Users can view their own profile" 
-  ON profiles FOR SELECT 
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can update their own profile" 
-  ON profiles FOR UPDATE 
-  USING (auth.uid() = id);
-```
-
-### Integrating with NextJS Apps
-
-1. Add the required environment variables to your `.env.local`:
+2. Add the required environment variables to your project:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
 ```
 
-2. Create a setup script in your project (e.g., `scripts/setup-db.js`):
+### Using Migration Commands
 
-```javascript
-// scripts/setup-db.js
-const { execSync } = require('child_process');
+RipTide provides convenient command-line tools for managing migrations:
 
-console.log('Setting up database...');
-execSync('npm run migrate:push', { stdio: 'inherit' });
-console.log('Database setup complete!');
+```bash
+# Check environment and migration status
+npx riptide-migrations status
+
+# Initialize Supabase project structure
+npx riptide-migrations init
+
+# Create a new migration
+npx riptide-migrations new create_custom_table
+
+# List all migrations and their status
+npx riptide-migrations list
+
+# Apply pending migrations
+npx riptide-migrations push
+
+# Reset database and reapply migrations (use with caution)
+npx riptide-migrations reset
 ```
 
-3. Add a setup command to your package.json:
+### Setup Wizard Integration
 
-```json
-"scripts": {
-  "setup": "node scripts/setup-db.js",
-  "dev": "npm run setup && next dev"
+RipTide's database migrations are designed to integrate seamlessly with the setup wizard:
+
+```typescript
+import { runDatabaseSetup } from '@riptide/core';
+
+// Run the database setup with auto-initialization and migration
+const setupResult = await runDatabaseSetup({
+  projectDir: './my-project',
+  autoInitialize: true,
+  autoRunMigrations: true,
+  onLog: (message, type) => {
+    console.log(`[${type}] ${message}`);
+  }
+});
+
+if (setupResult.success) {
+  console.log('Database setup completed successfully');
+} else {
+  console.error('Database setup failed:', setupResult.message);
 }
 ```
+
+For more granular control, you can use the individual helper functions:
+
+```typescript
+import { 
+  checkDatabaseSetup, 
+  createSetupWizardHelpers 
+} from '@riptide/core';
+
+// Get the status without making any changes
+const status = await checkDatabaseSetup({ 
+  autoInitialize: false,
+  autoRunMigrations: false 
+});
+
+// Create setup wizard helpers
+const helpers = createSetupWizardHelpers();
+
+// Check if migrations are needed
+const needsMigrations = await helpers.checkMigrationsNeeded();
+
+// Apply pending migrations if needed
+if (needsMigrations) {
+  const success = await helpers.applyPendingMigrations();
+}
+```
+
+### Database Schema
+
+RipTide Core includes the following pre-built schemas:
+
+1. **Profiles Table**: Extends Supabase auth.users with profile information
+   - Links to `auth.users` with ON DELETE CASCADE
+   - Stores user profile information like name, avatar, and preferences
+   - Includes RLS policies for secure access
+
+2. **API Tokens Table**: Manages user-generated API tokens
+   - Stores token names, hashes, scopes, and expiration dates
+   - Tracks token usage with last_used_at timestamp
+   - Includes revocation capabilities
+
+3. **User Sessions Table**: Tracks active user sessions
+   - Stores device and location information
+   - Enables multi-device login tracking
+   - Supports session revocation
 
 ### Programmatic Usage
 
-You can use the migration utilities programmatically in your own scripts:
+You can use RipTide's migration utilities programmatically in your own code:
 
 ```typescript
-import { createMigration, applyMigrations, listMigrations, resetDatabase } from '@riptide/core';
+import { 
+  initializeSupabase,
+  isSupabaseCliInstalled,
+  isSupabaseInitialized,
+  createMigration, 
+  applyMigrations, 
+  listMigrations, 
+  resetDatabase,
+  hasPendingMigrations,
+  parseMigrationStatus,
+  validateSupabaseEnv
+} from '@riptide/core';
 
-// Initialize a new project
-const initResult = initializeSupabase();
-if (initResult.success) {
-  console.log('Supabase project initialized');
+// Check if Supabase CLI is installed
+const hasSupabaseCli = isSupabaseCliInstalled();
+
+// Check if project has Supabase initialized
+const hasSupabaseInit = isSupabaseInitialized();
+
+// Check environment variables
+const envStatus = validateSupabaseEnv();
+if (!envStatus.valid) {
+  console.log(`Missing environment variables: ${envStatus.missingVars.join(', ')}`);
+}
+
+// Initialize Supabase project if needed
+if (!hasSupabaseInit) {
+  const initResult = initializeSupabase();
+  if (initResult.success) {
+    console.log('Supabase project initialized');
+  }
 }
 
 // Create a new migration
-const createResult = createMigration('create_profiles_table');
+const createResult = createMigration('create_custom_table');
 if (createResult.success) {
   console.log('Created new migration file');
 }
 
-// Apply all pending migrations
-const applyResult = await applyMigrations();
-if (applyResult.success) {
-  console.log('Applied all pending migrations');
+// Check if migrations need to be applied
+const needsMigrations = await hasPendingMigrations();
+if (needsMigrations) {
+  console.log('Migrations need to be applied');
 }
 
-// List migration status
-const listResult = await listMigrations();
-if (listResult.success) {
-  console.log('Migration status:', listResult.output);
+// Get detailed migration status
+const listResult = listMigrations();
+if (listResult.success && listResult.output) {
+  const status = parseMigrationStatus(listResult.output);
+  console.log(`Applied migrations: ${status.applied.length}`);
+  console.log(`Pending migrations: ${status.pending.length}`);
+}
+
+// Apply pending migrations
+const applyResult = applyMigrations();
+if (applyResult.success) {
+  console.log('Applied all pending migrations');
 }
 
 // Execute custom SQL (requires Supabase client)
@@ -154,12 +210,14 @@ import { createClient } from '@supabase/supabase-js';
 import { executeSQL } from '@riptide/core';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
 );
 
 const result = await executeSQL(supabase, 'SELECT * FROM profiles');
-console.log(result.data);
+if (result.success) {
+  console.log(result.data);
+}
 ```
 
 ## Quick Start

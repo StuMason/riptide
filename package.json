@@ -8,6 +8,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "riptide-migrations": "dist/db/cli.js"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
@@ -18,9 +21,11 @@
     "docs": "typedoc",
     "clean": "rimraf dist",
     "migrate:status": "ts-node src/db/cli.ts status",
-    "migrate:up": "ts-node src/db/cli.ts up",
-    "migrate:down": "ts-node src/db/cli.ts down",
-    "migrate:dry-run": "ts-node src/db/cli.ts dry-run",
+    "migrate:init": "ts-node src/db/cli.ts init",
+    "migrate:new": "ts-node src/db/cli.ts new",
+    "migrate:list": "ts-node src/db/cli.ts list",
+    "migrate:push": "ts-node src/db/cli.ts push",
+    "migrate:reset": "ts-node src/db/cli.ts reset",
     "prepare": "husky"
   },
   "lint-staged": {

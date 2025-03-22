@@ -15,6 +15,8 @@ alwaysApply: true
 - Commit frequently to maintain a reliable project history.
 - Always ask clarifying questions if tasks or requirements are unclear.
 
+ALWAY complete your tasks by running `npm run format`, `npm run lint`, `npm run test` and `npm run build` and fix any issues that may arise.
+
 ## User Interface (UI)
 
 - **Never change or affect the UI unintentionally.** Only alter UI components if explicitly instructed or clearly part of the assigned task.
