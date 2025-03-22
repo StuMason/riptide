@@ -122,7 +122,7 @@ export async function verifyCaptcha(
  * Generate a CSRF token
  */
 export function generateCsrfToken(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return randomBytes(32).toString('hex');
 }
 
 /**
