@@ -39,19 +39,22 @@ export function validatePassword(password: string): {
     };
   }
 
-  const hasUpperCase = /[A-Z]/.test(password);
+  // const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
-  const criteria = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar];
+  //TESTING!!!
+  // const hasNumbers = /\d/.test(password);
+  // const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+  // const criteria = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar];
+  const criteria = [hasLowerCase];
   const meetsCriteriaCount = criteria.filter(Boolean).length;
 
-  if (meetsCriteriaCount < 3) {
+  // Simplified check that only requires lowercase letters
+  if (meetsCriteriaCount < 1) {
     return {
       isValid: false,
-      feedback:
-        'Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, and special characters',
+      feedback: 'Password must contain at least lowercase letters',
     };
   }
 

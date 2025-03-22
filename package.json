@@ -1,101 +1,101 @@
 {
-  "name": "@masonator/riptide",
-  "version": "0.1.0",
-  "description": "A complete authentication and user management solution for NextJS applications using Supabase",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+    "name": "@masonator/riptide",
+    "version": "0.1.0",
+    "description": "A complete authentication and user management solution for NextJS applications using Supabase",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./server": {
+            "types": "./dist/server.d.ts",
+            "import": "./dist/server.js",
+            "require": "./dist/server.js"
+        }
     },
-    "./server": {
-      "import": "./dist/server.js",
-      "require": "./dist/server.js",
-      "types": "./dist/server.d.ts"
+    "files": [
+        "dist",
+        "src/db/migrations"
+    ],
+    "bin": {
+        "riptide": "dist/cli.js"
+    },
+    "scripts": {
+        "dev": "NODE_OPTIONS=--no-warnings tsc --watch",
+        "build": "NODE_OPTIONS=--no-warnings tsc",
+        "test": "NODE_OPTIONS=--no-warnings vitest run",
+        "test:watch": "NODE_OPTIONS=--no-warnings vitest",
+        "lint": "NODE_OPTIONS=--no-warnings eslint .",
+        "format": "NODE_OPTIONS=--no-warnings prettier --write \"src/**/*.{ts,tsx}\"",
+        "docs": "typedoc",
+        "clean": "rimraf dist",
+        "prepare": "husky",
+        "postinstall": "npx tsc || true"
+    },
+    "lint-staged": {
+        "*.{ts,tsx}": [
+            "prettier --write",
+            "eslint"
+        ]
+    },
+    "keywords": [
+        "authentication",
+        "supabase",
+        "nextjs",
+        "react",
+        "user-management"
+    ],
+    "author": "",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/your-username/riptide.git"
+    },
+    "bugs": {
+        "url": "https://github.com/your-username/riptide/issues"
+    },
+    "homepage": "https://github.com/your-username/riptide#readme",
+    "peerDependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.39.3",
+        "next": ">=13",
+        "react": ">=18",
+        "react-dom": ">=18"
+    },
+    "dependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.39.3",
+        "commander": "^13.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.0.0",
+        "@testing-library/jest-dom": "^6.1.4",
+        "@testing-library/react": "^14.0.0",
+        "@types/node": "^20.10.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "eslint": "^8.57.1",
+        "eslint-config-standard": "^17.1.0",
+        "eslint-plugin-import": "^2.31.0",
+        "eslint-plugin-n": "^16.6.2",
+        "eslint-plugin-promise": "^6.6.0",
+        "eslint-plugin-react": "^7.37.4",
+        "eslint-plugin-react-hooks": "^4.6.2",
+        "husky": "^9.1.7",
+        "jsdom": "^26.0.0",
+        "lint-staged": "^15.5.0",
+        "prettier": "^3.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "rimraf": "^5.0.10",
+        "ts-node": "^10.9.2",
+        "typedoc": "^0.25.0",
+        "typescript": "^5.0.0",
+        "typescript-eslint": "^7.18.0",
+        "vitest": "^3.0.9"
     }
-  },
-  "files": [
-    "dist",
-    "src/db/migrations"
-  ],
-  "bin": {
-    "riptide": "dist/cli.js"
-  },
-  "scripts": {
-    "dev": "NODE_OPTIONS=--no-warnings tsc --watch",
-    "build": "NODE_OPTIONS=--no-warnings tsc",
-    "test": "NODE_OPTIONS=--no-warnings vitest run",
-    "test:watch": "NODE_OPTIONS=--no-warnings vitest",
-    "lint": "NODE_OPTIONS=--no-warnings eslint .",
-    "format": "NODE_OPTIONS=--no-warnings prettier --write \"src/**/*.{ts,tsx}\"",
-    "docs": "typedoc",
-    "clean": "rimraf dist",
-    "prepare": "husky",
-    "postinstall": "npx tsc || true"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "prettier --write",
-      "eslint"
-    ]
-  },
-  "keywords": [
-    "authentication",
-    "supabase",
-    "nextjs",
-    "react",
-    "user-management"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-username/riptide.git"
-  },
-  "bugs": {
-    "url": "https://github.com/your-username/riptide/issues"
-  },
-  "homepage": "https://github.com/your-username/riptide#readme",
-  "peerDependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3",
-    "next": ">=13",
-    "react": ">=18",
-    "react-dom": ">=18"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3",
-    "commander": "^13.0.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/react": "^14.0.0",
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "eslint": "^8.57.1",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-n": "^16.6.2",
-    "eslint-plugin-promise": "^6.6.0",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "husky": "^9.1.7",
-    "jsdom": "^26.0.0",
-    "lint-staged": "^15.5.0",
-    "prettier": "^3.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rimraf": "^5.0.10",
-    "ts-node": "^10.9.2",
-    "typedoc": "^0.25.0",
-    "typescript": "^5.0.0",
-    "typescript-eslint": "^7.18.0",
-    "vitest": "^3.0.9"
-  }
 }
