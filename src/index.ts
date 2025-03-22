@@ -3,6 +3,7 @@ export * from './auth';
 
 // Export context components
 export { RipTideProvider, useAuth } from './context/RipTideProvider';
+export { useSession } from './context/SessionProvider';
 
 // Export types and utils
 export * from './types';

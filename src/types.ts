@@ -78,6 +78,7 @@ export interface Token {
  * Session with additional information
  */
 export interface ExtendedSession extends Session {
+  id: string;
   device?: {
     name: string;
     os: string;

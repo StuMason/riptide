@@ -3,6 +3,8 @@ import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-
 import { RipTideConfig, AuthContext } from '../types';
 import * as AuthClient from '../auth/client';
 import { checkRateLimit, resetRateLimit, verifyCaptcha } from '../auth/security';
+import { SessionProvider } from './SessionProvider';
+import { getSessionDeviceInfo, getLocationInfo } from '../utils';
 
 // Create the authentication context
 const AuthContext = createContext<AuthContext | undefined>(undefined);
@@ -230,7 +232,13 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <SessionProvider supabase={supabase} user={user}>
+        {children}
+      </SessionProvider>
+    </AuthContext.Provider>
+  );
 }
 
 /**
