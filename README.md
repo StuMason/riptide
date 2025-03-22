@@ -17,17 +17,20 @@ A complete authentication and user management solution for NextJS applications u
 npm install @masonator/riptide
 ```
 
-## Database Migrations
+### Using the CLI
 
-RipTide provides a comprehensive solution for managing database schemas and migrations using Supabase.
+RipTide comes with a CLI tool to help you set up Supabase in your NextJS project:
 
-### Features
+```bash
+# Initialize Supabase with RipTide (this runs migrations and sets up your environment)
+npx riptide init
+```
 
-- **SQL Migration Files**: Pre-built schema definitions with Row Level Security (RLS)
-- **CLI Commands**: Simple commands for managing migrations
-- **Migration Status Checking**: Check which migrations have been applied
-- **Setup Wizard Integration**: Seamlessly integrate with the RipTide setup wizard
-- **Local Development**: Works with local Supabase instances
+This command will:
+1. Check if Supabase CLI is installed
+2. Initialize Supabase if not already done
+3. Set up environment variables in your .env.local file
+4. Copy and apply database migrations
 
 ### Prerequisites
 
@@ -38,7 +41,6 @@ Running npx masonator/riptide init will create a new supabase project within you
 It will attempt to update the .env file with the correct values and run the migrations.
 
 It will then attempt to run the migrations and apply them to the database.
-
 
 ### Setup Wizard Integration
 
