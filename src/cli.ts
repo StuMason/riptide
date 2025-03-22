@@ -9,11 +9,7 @@ import * as fs from 'fs';
 const currentDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 // Detect if we're running from the dist or src directory
-const isDistBuild = currentDir.includes('dist');
-const packageRoot = isDistBuild
-  ? join(currentDir, '..') // If running from dist/cli.js
-  : join(currentDir, '..'); // If running from src/cli.ts with ts-node
-
+const packageRoot = join(currentDir, '..');
 // Determine the migrations directory based on where we're running from
 let defaultMigrationsDir = join(packageRoot, 'src', 'db', 'migrations'); // Default fallback
 
