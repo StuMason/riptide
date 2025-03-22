@@ -151,6 +151,6 @@ describe('LoginForm', () => {
   it('renders CAPTCHA container when showCaptcha is true', () => {
     render(<LoginForm showCaptcha={true} />);
 
-    expect(screen.getByTestId('captcha-container')).toBeInTheDocument();
+    expect(screen.getByTestId('login-captcha-wrapper')).toBeInTheDocument();
   });
 });

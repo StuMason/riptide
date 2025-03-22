@@ -258,7 +258,7 @@ export function RegisterForm({
 
       {/* CAPTCHA integration */}
       {showCaptcha && (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="register-captcha-wrapper">
           <Captcha onVerify={handleCaptchaVerification} className="flex justify-center" />
           {displayError?.field === 'captcha' && (
             <p id="captcha-error" className="mt-1 text-sm text-red-600 text-center">

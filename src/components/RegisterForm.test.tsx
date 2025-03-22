@@ -200,6 +200,6 @@ describe('RegisterForm', () => {
 
   it('shows CAPTCHA when enabled', () => {
     render(<RegisterForm showCaptcha={true} />);
-    expect(screen.getByTestId('captcha-container')).toBeInTheDocument();
+    expect(screen.getByTestId('register-captcha-wrapper')).toBeInTheDocument();
   });
 });
