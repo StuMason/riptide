@@ -1,12 +1,8 @@
-/**
- * RipTide - A complete authentication and user management solution for NextJS applications using Supabase
- * @packageDocumentation
- */
-
-// Re-export components and utilities as they are developed
+// Export types
 export * from './types';
-export * from './context/RipTideProvider';
-export * from './auth/middleware';
+
+// Export utils
 export * from './utils';
 
-// This will be our public API - we'll add more exports as we develop them
+// Export database functions
+export * from './db';

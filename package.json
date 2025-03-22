@@ -1,5 +1,5 @@
 {
-  "name": "@riptide/core",
+  "name": "@masonator/riptide",
   "version": "0.1.0",
   "description": "A complete authentication and user management solution for NextJS applications using Supabase",
   "main": "dist/index.js",
@@ -8,6 +8,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "riptide-migrations": "dist/db/cli.js"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
@@ -17,6 +20,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "docs": "typedoc",
     "clean": "rimraf dist",
+    "migrate:status": "ts-node src/db/cli.ts status",
+    "migrate:init": "ts-node src/db/cli.ts init",
+    "migrate:new": "ts-node src/db/cli.ts new",
+    "migrate:list": "ts-node src/db/cli.ts list",
+    "migrate:push": "ts-node src/db/cli.ts push",
+    "migrate:reset": "ts-node src/db/cli.ts reset",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -70,6 +79,7 @@
     "lint-staged": "^15.5.0",
     "prettier": "^3.0.0",
     "rimraf": "^5.0.10",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.25.0",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"

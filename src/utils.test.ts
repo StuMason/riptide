@@ -174,6 +174,7 @@ describe('Utils', () => {
     it('should return an empty string when window is undefined', () => {
       // Simulate server-side rendering
       const windowSpy = vi.spyOn(global, 'window', 'get');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       windowSpy.mockImplementation(() => undefined as any);
 
       const fingerprint = getBrowserFingerprint();
@@ -193,18 +194,25 @@ describe('Utils', () => {
 
       // Mock current date to be fixed
       now = new Date('2023-01-01T12:00:00Z');
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       global.Date = class extends Date {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         constructor(...args: any[]) {
           if (args.length === 0) {
+            super();
             return now;
           }
-          return new originalDate(...args);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
+          super(...args);
         }
       } as DateConstructor;
     });
 
     afterEach(() => {
       // Restore original Date constructor
+      vi.restoreAllMocks();
       global.Date = originalDate;
     });
 
