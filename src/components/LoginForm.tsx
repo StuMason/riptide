@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useLogin } from '../auth';
 import { generateCsrfToken } from '../auth/security';
+import { Captcha } from './Captcha';
 
 interface LoginFormProps {
   /**
@@ -140,15 +141,7 @@ export function LoginForm({
       {/* CAPTCHA integration placeholder */}
       {showCaptcha && (
         <div className="space-y-2">
-          <div
-            id="captcha-container"
-            data-testid="captcha-container"
-            className="flex justify-center"
-            // The actual CAPTCHA component will be mounted here by the provider
-            // and will call handleCaptchaVerification when verified
-          >
-            {/* CAPTCHA will be rendered here by the provider */}
-          </div>
+          <Captcha onVerify={handleCaptchaVerification} className="flex justify-center" />
           {authError?.field === 'captcha' && (
             <p id="captcha-error" className="mt-1 text-sm text-red-600 text-center">
               {authError.message}

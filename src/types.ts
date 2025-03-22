@@ -230,7 +230,7 @@ export interface AuthContext {
   user: User | null;
   session: Session | null;
   login: (email: string, password: string, captchaToken?: string) => Promise<Session>;
-  register: (name: string, email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, captchaToken?: string) => Promise<User>;
   resetPassword: (token: string, newPassword: string) => Promise<boolean>;
   sendPasswordResetEmail: (email: string) => Promise<boolean>;
   verifyEmail: (token: string) => Promise<boolean>;

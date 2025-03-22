@@ -29,6 +29,14 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
+  // Set config in window global for components to access
+  // This is a temporary solution until we implement proper context passing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__RIPTIDE_CONFIG__ = config;
+    }
+  }, [config]);
+
   // Initialize Supabase client
   useEffect(() => {
     // Get config from props or environment variables
@@ -166,17 +174,11 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, captchaToken?: string) => {
     if (!supabase) throw new Error('Supabase client not initialized');
 
     // Handle CAPTCHA if enabled
-    if ((config?.captcha?.enabled || config?.enableCaptcha) && typeof window !== 'undefined') {
-      const captchaToken = (window as any).captchaToken; // This would be set by your CAPTCHA component
-
-      if (!captchaToken) {
-        throw new Error('CAPTCHA verification failed. Please try again.');
-      }
-
+    if ((config?.captcha?.enabled || config?.enableCaptcha) && captchaToken) {
       // Verify CAPTCHA if server-side secret is available
       const secretKey = config?.captcha?.secretKey || process.env.CAPTCHA_SECRET_KEY;
       if (secretKey) {
@@ -184,7 +186,9 @@ export function RipTideProvider({ children, config }: RipTideProviderProps) {
         const isValid = await verifyCaptcha(captchaToken, secretKey, provider);
 
         if (!isValid) {
-          throw new Error('CAPTCHA verification failed. Please try again.');
+          const error = new Error('CAPTCHA verification failed. Please try again.') as any;
+          error.field = 'captcha';
+          throw error;
         }
       }
     }
