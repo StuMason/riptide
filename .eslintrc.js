@@ -34,4 +34,20 @@ module.exports = {
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   ignorePatterns: ['dist', 'node_modules', 'coverage'],
+  overrides: [
+    {
+      // Override for test files only
+      files: ['**/*.test.ts', '**/*.test.tsx'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off'
+      }
+    },
+    {
+      // Override for CLI files - allow console statements
+      files: ['**/cli.ts', '**/cli/*.ts'],
+      rules: {
+        'no-console': 'off'
+      }
+    }
+  ]
 }; 
