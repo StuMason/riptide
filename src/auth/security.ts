@@ -3,7 +3,7 @@
  * Note: For production, consider using a distributed solution like Redis
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 
 // Track login attempts by key (IP or userId)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -131,5 +131,19 @@ export function generateCsrfToken(): string {
  * Validate CSRF token
  */
 export function validateCsrfToken(token: string, storedToken: string): boolean {
-  return token === storedToken;
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    // Convert strings to buffers for comparison
+    const tokenBuffer = Buffer.from(token);
+    const storedTokenBuffer = Buffer.from(storedToken);
+
+    // If lengths are different, safely return false without leaking timing information
+    if (tokenBuffer.length !== storedTokenBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(tokenBuffer, storedTokenBuffer);
+  } catch (error) {
+    return false;
+  }
 }

@@ -26,6 +26,7 @@ vi.mock('../auth/security', () => ({
 vi.mock('../utils', () => ({
   isValidEmail: vi.fn(),
   validatePassword: vi.fn(),
+  compareValues: vi.fn(),
 }));
 
 describe('RegisterForm', () => {
@@ -40,6 +41,7 @@ describe('RegisterForm', () => {
       feedback:
         password.length >= 8 ? 'Password is strong' : 'Password must be at least 8 characters long',
     }));
+    vi.mocked(utils.compareValues).mockImplementation((a, b) => a === b);
 
     vi.mocked(auth.useRegister).mockReturnValue({
       register: vi.fn().mockResolvedValue({}),
