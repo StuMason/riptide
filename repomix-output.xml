@@ -64,9 +64,25 @@ The content is organized as follows:
   pre-commit
 src/
   auth/
+    client.test.ts
+    client.ts
+    hooks.ts
+    index.ts
     middleware.ts
+    security.test.ts
+    security.ts
+  components/
+    Captcha.test.tsx
+    Captcha.tsx
+    LoginForm.test.tsx
+    LoginForm.tsx
+    RegisterForm.test.tsx
+    RegisterForm.tsx
   context/
+    RipTideProvider.test.tsx
     RipTideProvider.tsx
+    SessionProvider.test.tsx
+    SessionProvider.tsx
   db/
     migrations/
       001_profiles.sql
@@ -74,15 +90,20 @@ src/
       003_user_sessions.sql
     index.ts
     types.ts
+  hooks/
+    useRipTideConfig.ts
   test/
     setup.ts
+  cli.test.ts
+  cli.ts
   index.ts
+  server.ts
   types.ts
   utils.test.ts
   utils.ts
-.eslintrc.js
 .gitignore
 .prettierrc
+eslint.config.js
 package.json
 README.md
 tsconfig.json
@@ -402,6 +423,243 @@ npx lint-staged
 npm run build
 </file>
 
+<file path="src/auth/client.test.ts">
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { SupabaseClient } from '@supabase/supabase-js';
+⋮----
+// Mock Supabase client
+</file>
+
+<file path="src/auth/client.ts">
+import { SupabaseClient, Session, User } from '@supabase/supabase-js';
+⋮----
+/**
+ * Sign in with email and password
+ */
+export async function signIn(
+  client: SupabaseClient,
+  email: string,
+  password: string
+): Promise<Session>
+⋮----
+/**
+ * Sign up with email and password
+ */
+export async function signUp(
+  client: SupabaseClient,
+  email: string,
+  password: string,
+  metadata: Record<string, any> = {}
+): Promise<User>
+⋮----
+/**
+ * Send password reset email
+ */
+export async function sendPasswordResetEmail(
+  client: SupabaseClient,
+  email: string,
+  redirectTo?: string
+): Promise<boolean>
+⋮----
+/**
+ * Reset password with token
+ */
+export async function resetPassword(client: SupabaseClient, newPassword: string): Promise<boolean>
+⋮----
+/**
+ * Sign out the current user
+ */
+export async function signOut(client: SupabaseClient): Promise<void>
+⋮----
+/**
+ * Verify email
+ * Note: Email verification is handled automatically by Supabase
+ * This is a placeholder for any additional verification logic
+ */
+export async function verifyEmail(client: SupabaseClient, _token: string): Promise<boolean>
+⋮----
+/**
+ * Get current session
+ */
+export async function getSession(client: SupabaseClient): Promise<Session | null>
+⋮----
+/**
+ * Get current user
+ */
+export async function getUser(client: SupabaseClient): Promise<User | null>
+⋮----
+/**
+ * Update user email
+ */
+export async function updateEmail(client: SupabaseClient, email: string): Promise<User>
+⋮----
+/**
+ * Update user password
+ */
+export async function updatePassword(client: SupabaseClient, password: string): Promise<User>
+</file>
+
+<file path="src/auth/index.ts">
+// Export client functions
+⋮----
+// Export security functions
+⋮----
+// Export auth hooks
+⋮----
+// Export middleware
+</file>
+
+<file path="src/auth/security.test.ts">
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  checkRateLimit,
+  resetRateLimit,
+  getRemainingAttempts,
+  generateCsrfToken,
+  validateCsrfToken,
+  verifyCaptcha,
+} from './security';
+⋮----
+// Mock fetch for CAPTCHA verification tests
+⋮----
+// Reset all rate limits between tests
+⋮----
+// Default is 5 attempts
+⋮----
+// Default is 5 attempts
+⋮----
+// 6th attempt should be blocked
+⋮----
+// Set limit to 2 attempts
+⋮----
+// 3rd attempt should be blocked
+⋮----
+// Use up some attempts
+⋮----
+// Reset rate limit
+⋮----
+// Should be able to make 5 more attempts
+⋮----
+// Use up all attempts for one key
+⋮----
+// Different key should be unaffected
+⋮----
+// No attempts used yet
+⋮----
+// Use 3 attempts
+⋮----
+// Should have 2 attempts remaining
+⋮----
+// Use all remaining attempts
+⋮----
+// Should have 0 attempts remaining
+⋮----
+expect(token1.length).toBeGreaterThan(10); // Should be reasonably long
+</file>
+
+<file path="src/components/Captcha.test.tsx">
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Captcha } from './Captcha';
+⋮----
+// Mock the useRipTideConfig hook
+⋮----
+// Mock the useRipTideConfig hook implementation
+⋮----
+// Mock document.createElement and appendChild for script loading
+⋮----
+// Simulate script load
+⋮----
+// Mock grecaptcha
+⋮----
+// Wait for useEffect to run
+⋮----
+// Verify it was called with the correct params
+⋮----
+// Change the provider to hcaptcha
+⋮----
+// Mock hcaptcha
+⋮----
+// Wait for useEffect to run
+⋮----
+// Verify it was called with the correct params
+</file>
+
+<file path="src/components/Captcha.tsx">
+import { useRipTideConfig } from '../hooks/useRipTideConfig';
+⋮----
+// Define window types for CAPTCHA libraries
+⋮----
+interface Window {
+    grecaptcha?: {
+      render: (
+        container: HTMLElement,
+        params: {
+          sitekey: string;
+          callback: (token: string) => void;
+        }
+      ) => number;
+      reset: (id: number) => void;
+      execute: (id: number) => void;
+    };
+    hcaptcha?: {
+      render: (
+        container: HTMLElement,
+        params: {
+          sitekey: string;
+          callback: (token: string) => void;
+        }
+      ) => number;
+      reset: (id: number) => void;
+      execute: (id: number) => void;
+    };
+  }
+⋮----
+interface CaptchaProps {
+  /**
+   * Function to call when the CAPTCHA is verified
+   */
+  onVerify: (token: string) => void;
+
+  /**
+   * Custom class name for the container
+   */
+  className?: string;
+}
+⋮----
+/**
+   * Function to call when the CAPTCHA is verified
+   */
+⋮----
+/**
+   * Custom class name for the container
+   */
+⋮----
+/**
+ * A component that renders a CAPTCHA widget (reCAPTCHA or hCaptcha)
+ * based on the RipTide configuration
+ */
+export function Captcha(
+⋮----
+// Only run on client side
+⋮----
+const loadScript = (src: string) =>
+⋮----
+// Check if script already exists
+⋮----
+const initializeCaptcha = async () =>
+⋮----
+// Make sure grecaptcha has loaded
+⋮----
+// Render reCAPTCHA
+⋮----
+// Make sure hcaptcha has loaded
+⋮----
+// Render hCaptcha
+⋮----
+// Cleanup
+</file>
+
 <file path="src/db/migrations/001_profiles.sql">
 -- Migration: 001_profiles
 -- Description: Create profiles table with RLS
@@ -575,8 +833,130 @@ DROP TABLE IF EXISTS user_sessions;
 */
 </file>
 
-<file path=".eslintrc.js">
+<file path="src/hooks/useRipTideConfig.ts">
+/**
+ * Hook to access RipTide configuration
+ * @returns The current RipTide configuration
+ */
+export function useRipTideConfig()
+⋮----
+// Get the config from the AuthContext instead of creating a new context
+// This is a simplified implementation
+⋮----
+// Get window global if available - this is a temporary solution
+// until we implement proper context passing
+⋮----
+// Add other config sections as needed
+</file>
 
+<file path="src/cli.test.ts">
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+⋮----
+import { join } from 'path';
+⋮----
+// Mock the setupSupabase function
+⋮----
+// Mock fs.existsSync
+⋮----
+// Mock process.exit
+⋮----
+// Save original argv and restore after tests
+⋮----
+// Mock console.log and console.error
+⋮----
+// Reset mocks
+⋮----
+// Mock a default migration path existence
+⋮----
+// Restore process.argv
+⋮----
+// Setup mock to return success
+⋮----
+// Set CLI args to invoke init command
+⋮----
+// Import CLI module (this will execute the script)
+⋮----
+// Verify setupSupabase was called with expected args
+⋮----
+// Verify success message was logged
+⋮----
+// Setup mock to return success
+⋮----
+// Set CLI args to invoke init command with silent flag
+⋮----
+// Re-import CLI module
+⋮----
+// Verify setupSupabase was called with silent: true
+⋮----
+// Setup mock to return success
+⋮----
+// Set CLI args to invoke init command with custom migrations directory
+⋮----
+// Re-import CLI module
+⋮----
+// Verify setupSupabase was called with custom migrations directory
+⋮----
+// Setup mock to return failure
+⋮----
+// Set CLI args to invoke init command
+⋮----
+// Re-import CLI module
+⋮----
+// Verify error was logged and process.exit was called with 1
+⋮----
+// Setup mock to return failure with a string error
+⋮----
+// Set CLI args to invoke init command
+⋮----
+// Re-import CLI module
+⋮----
+// Verify error was logged and process.exit was called with 1
+⋮----
+// Setup mock to return failure with no error
+⋮----
+// No error property
+⋮----
+// Set CLI args to invoke init command
+⋮----
+// Re-import CLI module
+⋮----
+// Verify error was logged and process.exit was called with 1
+⋮----
+// Reset existsSync mock to only return true for a specific path
+⋮----
+// Setup success response
+⋮----
+// Set CLI args
+⋮----
+// Re-import CLI module
+⋮----
+// Check the migrations dir passed to setupSupabase
+⋮----
+// Mock to only find migrations in node_modules
+⋮----
+// Setup success response
+⋮----
+// Set CLI args
+⋮----
+// Re-import CLI module
+⋮----
+// Check the migrations dir passed to setupSupabase
+⋮----
+// Mock to not find any migrations directory
+⋮----
+// Setup success response
+⋮----
+// Set CLI args
+⋮----
+// Re-import CLI module
+⋮----
+// Verify a default fallback was used
+</file>
+
+<file path="src/server.ts">
+// Server-side only exports (not safe for browser/client usage)
+⋮----
+// Also re-export types for consistency
 </file>
 
 <file path=".gitignore">
@@ -643,27 +1023,10 @@ docs
 }
 </file>
 
-<file path="tsconfig.json">
-{
-  "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "declaration": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
-}
+<file path="eslint.config.js">
+// Override for test files
+⋮----
+// Override for CLI files
 </file>
 
 <file path="typedoc.json">
@@ -753,6 +1116,311 @@ ALWAY complete your tasks by running `npm run format`, `npm run lint`, `npm run 
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
 </file>
 
+<file path="src/components/RegisterForm.test.tsx">
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { RegisterForm } from './RegisterForm';
+⋮----
+// Custom error type to match the component
+interface AuthError extends Error {
+  field?: string;
+  code?: string;
+}
+⋮----
+// Mock the auth hooks
+⋮----
+// Mock the security functions
+⋮----
+// Mock utility functions
+⋮----
+// Default mock implementations
+⋮----
+// Submit without filling any fields
+⋮----
+// Should display name validation error
+⋮----
+// Fill the name field and submit again
+⋮----
+// Should display email validation error
+⋮----
+// Fill name and email but use weak password
+⋮----
+// Should display password strength error
+⋮----
+// Use strong password but mismatched confirmation
+⋮----
+// Should display password match error
+⋮----
+// Fill all fields correctly
+⋮----
+// Submit the form
+⋮----
+// Verify register was called with correct args
+⋮----
+// Fill all fields correctly
+⋮----
+// Submit the form
+⋮----
+// Should display the error message from the hook
+⋮----
+// Fill all fields
+⋮----
+// Submit the form
+⋮----
+// Should display rate limiting message
+</file>
+
+<file path="src/components/RegisterForm.tsx">
+import { useRegister } from '../auth';
+import { generateCsrfToken } from '../auth/security';
+import { Captcha } from './Captcha';
+import { isValidEmail, validatePassword } from '../utils';
+⋮----
+interface RegisterFormProps {
+  /**
+   * Called when registration is successful
+   */
+  onSuccess?: () => void;
+
+  /**
+   * URL to redirect to after successful registration
+   */
+  redirectUrl?: string;
+
+  /**
+   * Whether to show CAPTCHA (requires RipTideProvider to have enableCaptcha set to true)
+   */
+  showCaptcha?: boolean;
+
+  /**
+   * Custom CSS classes for the form
+   */
+  className?: string;
+}
+⋮----
+/**
+   * Called when registration is successful
+   */
+⋮----
+/**
+   * URL to redirect to after successful registration
+   */
+⋮----
+/**
+   * Whether to show CAPTCHA (requires RipTideProvider to have enableCaptcha set to true)
+   */
+⋮----
+/**
+   * Custom CSS classes for the form
+   */
+⋮----
+// Add custom error type to extend the standard Error
+interface AuthError extends Error {
+  field?: string;
+  code?: string;
+}
+⋮----
+/**
+ * A secure registration form component with CSRF protection and optional CAPTCHA
+ */
+⋮----
+// Get register functionality from the hook
+⋮----
+// Generate CSRF token on component mount
+⋮----
+// Handle CAPTCHA verification
+const handleCaptchaVerification = (token: string) =>
+⋮----
+// Validate form before submission
+const validateForm = (): boolean =>
+⋮----
+// Reset validation error
+⋮----
+// Validate name
+⋮----
+// Validate email format
+⋮----
+// Validate password
+⋮----
+// Validate password confirmation
+⋮----
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) =>
+⋮----
+// Validate form before submission
+⋮----
+// Call register with name, email, password, and captchaToken
+⋮----
+// Clear form
+⋮----
+// Handle successful registration
+⋮----
+// Error is already handled by the hook
+⋮----
+// Cast error to AuthError type for additional properties
+⋮----
+// Determine if rate limiting is in effect
+⋮----
+{/* CSRF Token (hidden) */}
+⋮----
+{/* Name field */}
+⋮----
+{/* Email field */}
+⋮----
+onChange=
+⋮----
+{/* Password field */}
+⋮----
+{/* Confirm Password field */}
+⋮----
+{/* Password requirements hint */}
+⋮----
+{/* CAPTCHA integration */}
+⋮----
+{/* Rate limiting warning */}
+⋮----
+{/* General error message */}
+⋮----
+{/* Register button */}
+</file>
+
+<file path="src/context/RipTideProvider.test.tsx">
+import React from 'react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { RipTideProvider, useAuth } from './RipTideProvider';
+⋮----
+// Mock AuthClient functions
+⋮----
+// Mock security module
+⋮----
+// Mock Supabase client creation
+⋮----
+// Test component that uses the auth context
+const TestComponent = () =>
+⋮----
+// Initially loading
+⋮----
+// Wait for initialization to complete
+⋮----
+// Wait for initialization to complete
+⋮----
+const LoginTest = () =>
+⋮----
+// Wait for initialization to complete
+⋮----
+// Ensure the component has rendered and loginFn is defined
+⋮----
+// Call the login function
+⋮----
+const RegisterTest = () =>
+⋮----
+// Wait for initialization to complete
+⋮----
+// Ensure the component has rendered and registerFn is defined
+⋮----
+// Call the register function
+⋮----
+const ResetTest = () =>
+⋮----
+// Wait for initialization to complete
+⋮----
+// Ensure the component has rendered and resetPasswordFn is defined
+⋮----
+// Call the reset password function
+⋮----
+const LogoutTest = () =>
+⋮----
+// Wait for initialization to complete
+⋮----
+// Ensure the component has rendered and logoutFn is defined
+⋮----
+// Call the logout function
+⋮----
+// Suppress console.error for this test since we expect an error
+⋮----
+// Restore console.error
+</file>
+
+<file path="src/context/SessionProvider.test.tsx">
+import React from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { SessionProvider, useSession } from './SessionProvider';
+import { ExtendedSession } from '../types';
+import { vi, describe, it, expect } from 'vitest';
+⋮----
+// Mock security module
+⋮----
+// Mock user
+⋮----
+// Mock sessions
+⋮----
+// Mock Supabase client
+⋮----
+// Test component that uses the session context with CSRF
+⋮----
+const handleRevoke = (sessionId: string) =>
+⋮----
+// Initially loading
+⋮----
+// Wait for sessions to load
+⋮----
+// Check that current session is shown
+⋮----
+// Check that both sessions are listed by their test IDs
+⋮----
+// No sessions when user is null
+⋮----
+// Reset mocks before test
+⋮----
+// Use test ID to get the revoke button
+⋮----
+// Click the button
+⋮----
+// Check that the from method was called
+</file>
+
+<file path="src/cli.ts">
+import { Command } from 'commander';
+import { setupSupabase } from './db';
+import { join } from 'path';
+⋮----
+// Get the directory path of the current module using Node's __dirname or process.cwd() as fallback
+⋮----
+// Detect if we're running from the dist or src directory
+⋮----
+// Determine the migrations directory based on where we're running from
+let defaultMigrationsDir = join(packageRoot, 'src', 'db', 'migrations'); // Default fallback
+⋮----
+// Check various possible locations for migrations
+⋮----
+.version('0.1.0'); // Get this dynamically from your package.json in a real implementation
+⋮----
+// Handle different error types
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "NodeNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}
+</file>
+
 <file path="src/auth/middleware.ts">
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
@@ -809,69 +1477,338 @@ export function authMiddleware(options: AuthMiddlewareOptions =
 // Redirect authenticated users to dashboard from public routes
 </file>
 
-<file path="src/context/RipTideProvider.tsx">
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
-import { RipTideConfig, AuthContext } from '../types';
+<file path="src/auth/security.ts">
+/**
+ * Simple in-memory rate limiter for authentication
+ * Note: For production, consider using a distributed solution like Redis
+ */
 ⋮----
-// Create the authentication context
+import { randomBytes } from 'crypto';
 ⋮----
-// Provider props
-interface RipTideProviderProps {
-  children: ReactNode;
-  config?: Partial<RipTideConfig>;
-}
+// Track login attempts by key (IP or userId)
+⋮----
+// Default rate limit settings
+⋮----
+const DEFAULT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 ⋮----
 /**
- * RipTide Provider Component
+ * Check if a login attempt is allowed based on rate limiting
+ */
+export function checkRateLimit(
+  key: string,
+  maxAttempts: number = DEFAULT_MAX_ATTEMPTS,
+  windowMs: number = DEFAULT_WINDOW_MS
+): boolean
+⋮----
+// If no previous attempts or window expired, reset
+⋮----
+// Check if under rate limit
+⋮----
+/**
+ * Reset rate limit for a key
+ */
+export function resetRateLimit(key: string): void
+⋮----
+/**
+ * Get remaining attempts for a key
+ */
+export function getRemainingAttempts(
+  key: string,
+  maxAttempts: number = DEFAULT_MAX_ATTEMPTS
+): number
+⋮----
+/**
+ * Verify reCAPTCHA token
+ */
+export async function verifyRecaptcha(token: string, secret: string): Promise<boolean>
+⋮----
+/**
+ * Verify hCaptcha token
+ */
+export async function verifyHcaptcha(token: string, secret: string): Promise<boolean>
+⋮----
+/**
+ * Verify CAPTCHA token based on provider
+ */
+export async function verifyCaptcha(
+  token: string,
+  secret: string,
+  provider: 'recaptcha' | 'hcaptcha' = 'recaptcha'
+): Promise<boolean>
+⋮----
+/**
+ * Generate a CSRF token
+ */
+export function generateCsrfToken(): string
+⋮----
+/**
+ * Validate CSRF token
+ */
+export function validateCsrfToken(token: string, storedToken: string): boolean
+</file>
+
+<file path="src/components/LoginForm.test.tsx">
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { LoginForm } from './LoginForm';
+⋮----
+// Custom error type to match the component
+interface AuthError extends Error {
+  field?: string;
+  code?: string;
+}
+⋮----
+// Mock the auth hooks
+⋮----
+// Mock the security functions
+⋮----
+// Setup default mocks
+⋮----
+// Check if form elements are present
+⋮----
+// Get the hidden input by its name attribute
+⋮----
+// Fill out the form
+⋮----
+// Submit the form
+⋮----
+// Check if login was called with correct data
+// The third parameter is the CAPTCHA token which is initially empty
+⋮----
+// Fill out and submit the form
+⋮----
+// Mock successful login
+⋮----
+// Submit the form
+⋮----
+// Check if onSuccess was called
+</file>
+
+<file path="src/context/SessionProvider.tsx">
+import { createContext, useContext, useState, useEffect, ReactNode, Context } from 'react';
+import { User } from '@supabase/supabase-js';
+import { ExtendedSession, SessionContext } from '../types';
+import { parseUserAgent } from '../utils';
+import { generateCsrfToken, validateCsrfToken } from '../auth/security';
+⋮----
+// Create the session context with proper typing
+⋮----
+// Provider props
+interface SessionProviderProps {
+  children: ReactNode;
+  supabase: any; // We'll use any here but in practice would type this properly
+  user: User | null;
+  enableCsrf?: boolean;
+}
+⋮----
+supabase: any; // We'll use any here but in practice would type this properly
+⋮----
+/**
+ * Session Provider Component
  *
- * Provides authentication context to all child components.
+ * Provides session management context to all child components.
  *
  * @param props - The provider props
  * @returns The provider component
  */
-export function RipTideProvider(
+export function SessionProvider({
+  children,
+  supabase,
+  user,
+  enableCsrf = true,
+}: SessionProviderProps)
 ⋮----
-// Initialize state
+// Generate a CSRF token when the provider is mounted
 ⋮----
-// Initialize Supabase client
-⋮----
-// Get config from props or environment variables
-⋮----
-// Create Supabase client
-⋮----
-// Get initial session and user
-const initializeAuth = async () =>
-⋮----
-// Set up auth state change listener
-⋮----
-// Clean up subscription on unmount
-⋮----
-// Authentication functions
-const login = async (email: string, password: string) =>
-⋮----
-const register = async (name: string, email: string, password: string) =>
-⋮----
-const resetPassword = async (_token: string, newPassword: string) =>
-⋮----
-const sendPasswordResetEmail = async (email: string) =>
-⋮----
-const verifyEmail = async (_token: string) =>
-⋮----
-// Note: Email verification is handled automatically by Supabase
-// This is a placeholder for any additional verification logic
-⋮----
-const logout = async () =>
-⋮----
-// Context value
+// Load sessions when user changes
 ⋮----
 /**
- * Hook to use the authentication context
+   * Gets a CSRF token for session operations
+   *
+   * @returns The current CSRF token
+   */
+const getCsrfToken = (): string =>
+⋮----
+// Regenerate the token if needed
+⋮----
+/**
+   * Lists all sessions for the current user
+   *
+   * @returns A promise resolving to the list of sessions
+   */
+const listSessions = async (): Promise<ExtendedSession[]> =>
+⋮----
+// Transform database records to ExtendedSession objects
+⋮----
+// Base Session properties
+⋮----
+access_token: '', // These fields would come from Supabase auth session
+⋮----
+// Extended properties
+⋮----
+// Set current session
+⋮----
+/**
+   * Revokes a specific session
+   *
+   * @param id - The ID of the session to revoke
+   * @param token - Optional CSRF token for protection
+   * @returns A promise resolving to a boolean indicating success
+   */
+const revokeSession = async (id: string, token?: string): Promise<boolean> =>
+⋮----
+// Validate CSRF token if enabled
+⋮----
+// Refresh the sessions list
+⋮----
+// Regenerate CSRF token after successful revocation for improved security
+⋮----
+// Create context value
+⋮----
+/**
+ * Hook for using the session context
  *
- * @returns The authentication context
- * @throws Error if used outside of a RipTideProvider
+ * @returns The session context
+ * @throws Error if used outside a SessionProvider
  */
-export function useAuth(): AuthContext
+export function useSession(): SessionContext
+</file>
+
+<file path="src/test/setup.ts">
+// This file will be used by Vitest for setting up the test environment
+// We'll be using this file for setting up any mocks or global configuration for tests
+⋮----
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+⋮----
+// Import jest-dom without assigning it
+⋮----
+// Automatically clean up after each test
+</file>
+
+<file path="src/auth/hooks.ts">
+import React, { useCallback } from 'react';
+import { useAuth } from '../context/RipTideProvider';
+⋮----
+/**
+ * Hook for login functionality
+ */
+export function useLogin()
+⋮----
+/**
+ * Hook for registration functionality
+ */
+export function useRegister()
+⋮----
+/**
+ * Hook for password reset functionality
+ */
+export function usePasswordReset()
+⋮----
+/**
+ * Hook for logout functionality
+ */
+export function useLogout()
+⋮----
+/**
+ * Hook to check if user is authenticated
+ */
+export function useAuthStatus()
+⋮----
+/**
+ * Hook for email verification
+ */
+export function useEmailVerification()
+</file>
+
+<file path="src/components/LoginForm.tsx">
+import { useLogin } from '../auth';
+import { generateCsrfToken } from '../auth/security';
+import { Captcha } from './Captcha';
+⋮----
+interface LoginFormProps {
+  /**
+   * Called when login is successful
+   */
+  onSuccess?: () => void;
+
+  /**
+   * URL to redirect to after successful login
+   */
+  redirectUrl?: string;
+
+  /**
+   * Whether to show CAPTCHA (requires RipTideProvider to have enableCaptcha set to true)
+   */
+  showCaptcha?: boolean;
+
+  /**
+   * Custom CSS classes for the form
+   */
+  className?: string;
+}
+⋮----
+/**
+   * Called when login is successful
+   */
+⋮----
+/**
+   * URL to redirect to after successful login
+   */
+⋮----
+/**
+   * Whether to show CAPTCHA (requires RipTideProvider to have enableCaptcha set to true)
+   */
+⋮----
+/**
+   * Custom CSS classes for the form
+   */
+⋮----
+// Add custom error type to extend the standard Error
+interface AuthError extends Error {
+  field?: string;
+  code?: string;
+}
+⋮----
+/**
+ * A secure login form component with CSRF protection and optional CAPTCHA
+ */
+⋮----
+// Get login functionality from the hook
+⋮----
+// Generate CSRF token on component mount
+⋮----
+// Handle CAPTCHA verification
+const handleCaptchaVerification = (token: string) =>
+⋮----
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) =>
+⋮----
+// Call login with email and password as separate arguments
+// The CAPTCHA token may be needed by the auth system later
+⋮----
+// Handle successful login
+⋮----
+// Error is already handled by the hook
+⋮----
+// Cast error to AuthError type for additional properties
+⋮----
+// Determine if rate limiting is in effect
+⋮----
+{/* CSRF Token (hidden) */}
+⋮----
+{/* Email field */}
+⋮----
+{/* Password field */}
+⋮----
+onChange=
+⋮----
+{/* CAPTCHA integration placeholder */}
+⋮----
+{/* Rate limiting warning */}
+⋮----
+{/* General error message */}
+⋮----
+{/* Login button */}
 </file>
 
 <file path="src/db/index.ts">
@@ -954,7 +1891,15 @@ export function setupSupabase(options: SupabaseSetupOptions =
 ⋮----
 // Step 5: Copy migrations from source to supabase/migrations
 ⋮----
-// Step 6: Run migrations
+// Step 6: Check if using local environment and manage Supabase service
+⋮----
+// Check if Supabase is running locally
+⋮----
+// Start Supabase
+⋮----
+// When Supabase starts, it automatically applies migrations, so we can skip Step 7
+⋮----
+// Step 7: Run migrations (only if not already applied by starting Supabase)
 ⋮----
 /**
  * Checks if Supabase CLI is installed
@@ -968,6 +1913,29 @@ export function isSupabaseCliInstalled(): boolean
  * @returns True if Supabase is initialized in the project
  */
 export function isSupabaseInitialized(cwd: string = process.cwd()): boolean
+⋮----
+/**
+ * Checks if using local Supabase environment based on URL
+ * @returns True if using local Supabase environment
+ */
+export function isUsingLocalEnvironment(): boolean
+⋮----
+/**
+ * Checks if Supabase is running locally
+ * @returns True if Supabase is running
+ */
+export function isSupabaseRunning(): boolean
+⋮----
+// Try to ping the Supabase health check endpoint
+⋮----
+/**
+ * Starts Supabase locally
+ * @param options Additional options
+ * @returns Command result
+ */
+export function startSupabase(options: MigrationOptions =
+⋮----
+// Ensure Supabase is initialized
 ⋮----
 /**
  * Executes a Supabase CLI command
@@ -1055,262 +2023,8 @@ export interface CliCommandResult {
  */
 export interface MigrationOptions {
   cwd?: string;
+  silent?: boolean;
 }
-</file>
-
-<file path="src/test/setup.ts">
-// This file will be used by Vitest for setting up the test environment
-// We'll be using this file for setting up any mocks or global configuration for tests
-⋮----
-import { afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-⋮----
-// Import jest-dom without assigning it
-⋮----
-// Automatically clean up after each test
-</file>
-
-<file path="src/types.ts">
-/**
- * Type definitions for RipTide
- */
-⋮----
-import { Session, User } from '@supabase/supabase-js';
-⋮----
-/**
- * RipTide provider configuration options
- */
-export interface RipTideConfig {
-  /**
-   * Supabase URL
-   */
-  supabaseUrl: string;
-
-  /**
-   * Supabase anonymous key
-   */
-  supabaseAnonKey: string;
-
-  /**
-   * Enable CAPTCHA for auth forms
-   * @default false
-   */
-  enableCaptcha?: boolean;
-
-  /**
-   * CAPTCHA provider
-   * @default 'recaptcha'
-   */
-  captchaProvider?: 'recaptcha' | 'hcaptcha';
-
-  /**
-   * CAPTCHA site key
-   */
-  captchaSiteKey?: string;
-
-  /**
-   * Rate limit configuration
-   */
-  rateLimit?: {
-    /**
-     * Maximum number of requests
-     * @default 100
-     */
-    max?: number;
-
-    /**
-     * Time window in milliseconds
-     * @default 900000 (15 minutes)
-     */
-    windowMs?: number;
-  };
-}
-⋮----
-/**
-   * Supabase URL
-   */
-⋮----
-/**
-   * Supabase anonymous key
-   */
-⋮----
-/**
-   * Enable CAPTCHA for auth forms
-   * @default false
-   */
-⋮----
-/**
-   * CAPTCHA provider
-   * @default 'recaptcha'
-   */
-⋮----
-/**
-   * CAPTCHA site key
-   */
-⋮----
-/**
-   * Rate limit configuration
-   */
-⋮----
-/**
-     * Maximum number of requests
-     * @default 100
-     */
-⋮----
-/**
-     * Time window in milliseconds
-     * @default 900000 (15 minutes)
-     */
-⋮----
-/**
- * User profile update data
- */
-export interface ProfileUpdateData {
-  name?: string;
-  email?: string;
-  avatar_url?: string;
-  [key: string]: string | undefined;
-}
-⋮----
-/**
- * API Token
- */
-export interface Token {
-  id: string;
-  name: string;
-  scopes: string[];
-  created_at: string;
-  last_used_at?: string;
-}
-⋮----
-/**
- * Session with additional information
- */
-export interface ExtendedSession extends Session {
-  device?: {
-    name: string;
-    os: string;
-    type: string;
-  };
-  location?: {
-    city?: string;
-    country?: string;
-    ip: string;
-  };
-  last_active_at: string;
-  is_current: boolean;
-}
-⋮----
-/**
- * Authentication context
- */
-export interface AuthContext {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: User | null;
-  session: Session | null;
-  login: (email: string, password: string) => Promise<Session>;
-  register: (name: string, email: string, password: string) => Promise<User>;
-  resetPassword: (token: string, newPassword: string) => Promise<boolean>;
-  sendPasswordResetEmail: (email: string) => Promise<boolean>;
-  verifyEmail: (token: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-}
-⋮----
-/**
- * User management context
- */
-export interface UserContext {
-  user: User | null;
-  isLoading: boolean;
-  updateProfile: (data: ProfileUpdateData) => Promise<User>;
-  updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  deleteAccount: (password: string) => Promise<boolean>;
-}
-⋮----
-/**
- * Token management context
- */
-export interface TokenContext {
-  tokens: Token[];
-  isLoading: boolean;
-  createToken: (name: string, scopes: string[]) => Promise<Token>;
-  listTokens: () => Promise<Token[]>;
-  revokeToken: (id: string) => Promise<boolean>;
-}
-⋮----
-/**
- * Session management context
- */
-export interface SessionContext {
-  sessions: ExtendedSession[];
-  currentSession: ExtendedSession | null;
-  isLoading: boolean;
-  listSessions: () => Promise<ExtendedSession[]>;
-  revokeSession: (id: string) => Promise<boolean>;
-}
-</file>
-
-<file path="src/utils.ts">
-/**
- * Utility functions for RipTide
- */
-⋮----
-/**
- * Creates a CSRF token
- *
- * @returns A random string to use as a CSRF token
- */
-export function createCsrfToken(): string
-⋮----
-/**
- * Validates an email address format
- *
- * @param email - The email address to validate
- * @returns True if the email format is valid
- */
-export function isValidEmail(email: string): boolean
-⋮----
-/**
- * Validates password strength
- *
- * @param password - The password to validate
- * @returns An object containing validity and feedback
- */
-export function validatePassword(password: string):
-⋮----
-/**
- * Sanitizes user input to prevent XSS attacks
- *
- * @param input - The user input to sanitize
- * @returns Sanitized input
- */
-export function sanitizeInput(input: string): string
-⋮----
-/**
- * Checks if a value is a valid URL
- *
- * @param value - The value to check
- * @returns True if the value is a valid URL
- */
-export function isValidUrl(value: string): boolean
-⋮----
-/**
- * Gets a user's browser fingerprint
- *
- * @returns A string representing the browser fingerprint
- */
-export function getBrowserFingerprint(): string
-⋮----
-// Create a simple fingerprint
-⋮----
-/**
- * Formats a date as a relative time string (e.g., "2 hours ago")
- *
- * @param date - The date to format
- * @returns A string representing the relative time
- */
-export function formatRelativeTime(date: Date | string): string
 </file>
 
 <file path="src/utils.test.ts">
@@ -1324,6 +2038,8 @@ import {
   getBrowserFingerprint,
   formatRelativeTime,
 } from './utils';
+⋮----
+// Test for a password without lowercase letters
 ⋮----
 // uppercase, lowercase, numbers (no special chars)
 ⋮----
@@ -1380,199 +2096,1189 @@ const date1 = new Date('2022-01-01T12:00:00Z'); // 1 year ago
 const date2 = new Date('2020-01-01T12:00:00Z'); // 3 years ago
 </file>
 
-<file path="src/index.ts">
-// Export types
+<file path="src/utils.ts">
+/**
+ * Utility functions for RipTide
+ */
 ⋮----
-// Export utils
+/**
+ * Creates a CSRF token
+ *
+ * @returns A random string to use as a CSRF token
+ */
+export function createCsrfToken(): string
 ⋮----
-// Export database functions
+/**
+ * Validates an email address format
+ *
+ * @param email - The email address to validate
+ * @returns True if the email format is valid
+ */
+export function isValidEmail(email: string): boolean
+⋮----
+/**
+ * Validates password strength
+ *
+ * @param password - The password to validate
+ * @returns An object containing validity and feedback
+ */
+export function validatePassword(password: string):
+⋮----
+// const hasUpperCase = /[A-Z]/.test(password);
+⋮----
+//TESTING!!!
+// const hasNumbers = /\d/.test(password);
+// const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+⋮----
+// const criteria = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar];
+⋮----
+// Simplified check that only requires lowercase letters
+⋮----
+/**
+ * Sanitizes user input to prevent XSS attacks
+ *
+ * @param input - The user input to sanitize
+ * @returns Sanitized input
+ */
+export function sanitizeInput(input: string): string
+⋮----
+/**
+ * Checks if a value is a valid URL
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid URL
+ */
+export function isValidUrl(value: string): boolean
+⋮----
+/**
+ * Gets a user's browser fingerprint
+ *
+ * @returns A string representing the browser fingerprint
+ */
+export function getBrowserFingerprint(): string
+⋮----
+// Create a simple fingerprint
+⋮----
+/**
+ * Formats a date as a relative time string (e.g., "2 hours ago")
+ *
+ * @param date - The date to format
+ * @returns A string representing the relative time
+ */
+export function formatRelativeTime(date: Date | string): string
+⋮----
+/**
+ * Parses a user agent string to extract device and browser information
+ *
+ * @param userAgent - The user agent string to parse
+ * @returns An object containing parsed device and browser information
+ */
+export function parseUserAgent(userAgent: string = ''):
+⋮----
+// Determine browser
+⋮----
+// Determine OS
+⋮----
+// Determine device type
+⋮----
+/**
+ * Gets session device information based on the current client
+ *
+ * @returns An object containing device information for session tracking
+ */
+export function getSessionDeviceInfo():
+⋮----
+/**
+ * Gets location information for a session
+ * In a real-world implementation, this would call a geolocation service
+ *
+ * @param ip - The IP address to lookup
+ * @returns A promise resolving to location information
+ */
+export async function getLocationInfo(ip: string): Promise<
+⋮----
+// In a real implementation, you would call a geolocation API
+// This is a stub implementation
+</file>
+
+<file path="src/types.ts">
+/**
+ * Type definitions for RipTide
+ */
+⋮----
+import { Session, User } from '@supabase/supabase-js';
+⋮----
+/**
+ * RipTide provider configuration options
+ */
+export interface RipTideConfig {
+  /**
+   * Supabase URL
+   */
+  supabaseUrl: string;
+
+  /**
+   * Supabase anonymous key
+   */
+  supabaseAnonKey: string;
+
+  /**
+   * Authentication settings
+   */
+  auth?: {
+    /**
+     * Where to redirect when auth is required
+     * @default '/login'
+     */
+    redirectTo?: string;
+
+    /**
+     * Require email verification
+     * @default true
+     */
+    emailVerification?: boolean;
+
+    /**
+     * Minimum password length
+     * @default 8
+     */
+    passwordMinLength?: number;
+
+    /**
+     * Whether to persist session across page reloads
+     * @default true
+     */
+    persistSession?: boolean;
+  };
+
+  /**
+   * CAPTCHA configuration
+   */
+  captcha?: {
+    /**
+     * Enable CAPTCHA for auth forms
+     * @default false
+     */
+    enabled?: boolean;
+
+    /**
+     * CAPTCHA provider
+     * @default 'recaptcha'
+     */
+    provider?: 'recaptcha' | 'hcaptcha';
+
+    /**
+     * CAPTCHA site key
+     */
+    siteKey?: string;
+
+    /**
+     * CAPTCHA secret key (server-side only)
+     */
+    secretKey?: string;
+
+    /**
+     * Show CAPTCHA after N failed attempts
+     * @default 3
+     */
+    showAfterAttempts?: number;
+  };
+
+  /**
+   * Legacy properties (deprecated)
+   * @deprecated Use captcha.enabled instead
+   */
+  enableCaptcha?: boolean;
+
+  /**
+   * @deprecated Use captcha.provider instead
+   */
+  captchaProvider?: 'recaptcha' | 'hcaptcha';
+
+  /**
+   * @deprecated Use captcha.siteKey instead
+   */
+  captchaSiteKey?: string;
+
+  /**
+   * Rate limit configuration
+   */
+  rateLimit?: {
+    /**
+     * Enable rate limiting
+     * @default true
+     */
+    enabled?: boolean;
+
+    /**
+     * Maximum number of requests
+     * @default 5
+     */
+    max?: number;
+
+    /**
+     * Time window in milliseconds
+     * @default 900000 (15 minutes)
+     */
+    windowMs?: number;
+
+    /**
+     * Don't count successful requests against the rate limit
+     * @default true
+     */
+    skipSuccessfulRequests?: boolean;
+  };
+
+  /**
+   * Session configuration
+   */
+  session?: {
+    /**
+     * Session timeout in milliseconds
+     * @default 2592000000 (30 days)
+     */
+    timeoutMs?: number;
+
+    /**
+     * Enable CSRF protection for session operations
+     * @default true
+     */
+    enableCsrf?: boolean;
+
+    /**
+     * Store device info with sessions
+     * @default true
+     */
+    persistDeviceInfo?: boolean;
+
+    /**
+     * Track location data (country, city)
+     * @default true
+     */
+    trackLocationInfo?: boolean;
+
+    /**
+     * Maximum concurrent sessions per user
+     * @default 5
+     */
+    maxSessions?: number;
+  };
+
+  /**
+   * UI settings
+   */
+  ui?: {
+    /**
+     * Theme for components
+     * @default 'light'
+     */
+    theme?: 'light' | 'dark';
+
+    /**
+     * Custom CSS classes
+     */
+    customClasses?: {
+      loginForm?: string;
+      registerForm?: string;
+      [key: string]: string | undefined;
+    };
+  };
+}
+⋮----
+/**
+   * Supabase URL
+   */
+⋮----
+/**
+   * Supabase anonymous key
+   */
+⋮----
+/**
+   * Authentication settings
+   */
+⋮----
+/**
+     * Where to redirect when auth is required
+     * @default '/login'
+     */
+⋮----
+/**
+     * Require email verification
+     * @default true
+     */
+⋮----
+/**
+     * Minimum password length
+     * @default 8
+     */
+⋮----
+/**
+     * Whether to persist session across page reloads
+     * @default true
+     */
+⋮----
+/**
+   * CAPTCHA configuration
+   */
+⋮----
+/**
+     * Enable CAPTCHA for auth forms
+     * @default false
+     */
+⋮----
+/**
+     * CAPTCHA provider
+     * @default 'recaptcha'
+     */
+⋮----
+/**
+     * CAPTCHA site key
+     */
+⋮----
+/**
+     * CAPTCHA secret key (server-side only)
+     */
+⋮----
+/**
+     * Show CAPTCHA after N failed attempts
+     * @default 3
+     */
+⋮----
+/**
+   * Legacy properties (deprecated)
+   * @deprecated Use captcha.enabled instead
+   */
+⋮----
+/**
+   * @deprecated Use captcha.provider instead
+   */
+⋮----
+/**
+   * @deprecated Use captcha.siteKey instead
+   */
+⋮----
+/**
+   * Rate limit configuration
+   */
+⋮----
+/**
+     * Enable rate limiting
+     * @default true
+     */
+⋮----
+/**
+     * Maximum number of requests
+     * @default 5
+     */
+⋮----
+/**
+     * Time window in milliseconds
+     * @default 900000 (15 minutes)
+     */
+⋮----
+/**
+     * Don't count successful requests against the rate limit
+     * @default true
+     */
+⋮----
+/**
+   * Session configuration
+   */
+⋮----
+/**
+     * Session timeout in milliseconds
+     * @default 2592000000 (30 days)
+     */
+⋮----
+/**
+     * Enable CSRF protection for session operations
+     * @default true
+     */
+⋮----
+/**
+     * Store device info with sessions
+     * @default true
+     */
+⋮----
+/**
+     * Track location data (country, city)
+     * @default true
+     */
+⋮----
+/**
+     * Maximum concurrent sessions per user
+     * @default 5
+     */
+⋮----
+/**
+   * UI settings
+   */
+⋮----
+/**
+     * Theme for components
+     * @default 'light'
+     */
+⋮----
+/**
+     * Custom CSS classes
+     */
+⋮----
+/**
+ * User profile update data
+ */
+export interface ProfileUpdateData {
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  [key: string]: string | undefined;
+}
+⋮----
+/**
+ * API Token
+ */
+export interface Token {
+  id: string;
+  name: string;
+  scopes: string[];
+  created_at: string;
+  last_used_at?: string;
+}
+⋮----
+/**
+ * Session with additional information
+ */
+export interface ExtendedSession extends Session {
+  id: string;
+  device?: {
+    name: string;
+    os: string;
+    type: string;
+  };
+  location?: {
+    city?: string;
+    country?: string;
+    ip: string;
+  };
+  last_active_at: string;
+  is_current: boolean;
+}
+⋮----
+/**
+ * Authentication context
+ */
+export interface AuthContext {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
+  session: Session | null;
+  login: (email: string, password: string, captchaToken?: string) => Promise<Session>;
+  register: (name: string, email: string, password: string, captchaToken?: string) => Promise<User>;
+  resetPassword: (token: string, newPassword: string) => Promise<boolean>;
+  sendPasswordResetEmail: (email: string) => Promise<boolean>;
+  verifyEmail: (token: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+}
+⋮----
+/**
+ * User management context
+ */
+export interface UserContext {
+  user: User | null;
+  isLoading: boolean;
+  updateProfile: (data: ProfileUpdateData) => Promise<User>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  deleteAccount: (password: string) => Promise<boolean>;
+}
+⋮----
+/**
+ * Token management context
+ */
+export interface TokenContext {
+  tokens: Token[];
+  isLoading: boolean;
+  createToken: (name: string, scopes: string[]) => Promise<Token>;
+  listTokens: () => Promise<Token[]>;
+  revokeToken: (id: string) => Promise<boolean>;
+}
+⋮----
+/**
+ * Session management context
+ */
+export interface SessionContext {
+  sessions: ExtendedSession[];
+  currentSession: ExtendedSession | null;
+  isLoading: boolean;
+  listSessions: () => Promise<ExtendedSession[]>;
+  revokeSession: (id: string, csrfToken?: string) => Promise<boolean>;
+  getCsrfToken: () => string;
+}
+</file>
+
+<file path="src/context/RipTideProvider.tsx">
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
+import { RipTideConfig, AuthContext } from '../types';
+⋮----
+import { checkRateLimit, resetRateLimit, verifyCaptcha } from '../auth/security';
+import { SessionProvider } from './SessionProvider';
+⋮----
+// Create the authentication context
+⋮----
+// Provider props
+interface RipTideProviderProps {
+  children: ReactNode;
+  config?: Partial<RipTideConfig>;
+}
+⋮----
+/**
+ * RipTide Provider Component
+ *
+ * Provides authentication context to all child components.
+ *
+ * @param props - The provider props
+ * @returns The provider component
+ */
+export function RipTideProvider(
+⋮----
+// Initialize state
+⋮----
+// Set config in window global for components to access
+// This is a temporary solution until we implement proper context passing
+⋮----
+// Initialize Supabase client
+⋮----
+// Get config from props or environment variables
+⋮----
+// Create Supabase client
+⋮----
+// Get initial session and user
+const initializeAuth = async () =>
+⋮----
+// Create/update user profile in database if not exists
+⋮----
+// Set up auth state change listener
+⋮----
+// Create/update sessions table on login
+⋮----
+// Get IP address and device info from client side if possible
+⋮----
+// Get session timeout from config or use default (30 days)
+⋮----
+// Create a new session record
+⋮----
+auth_session_id: newSession.user.id, // This is just a placeholder - in a real app you'd track the actual session ID
+⋮----
+// Clean up subscription on unmount
+⋮----
+// Authentication functions
+const login = async (email: string, password: string, captchaToken?: string) =>
+⋮----
+// Apply rate limiting by email (simple approach - could be enhanced with IP tracking)
+⋮----
+// Check rate limit config
+⋮----
+// Handle CAPTCHA if enabled
+⋮----
+// Verify CAPTCHA if server-side secret is available
+⋮----
+// Reset rate limit on successful login
+⋮----
+// Keep rate limit in place for failed attempts
+⋮----
+const register = async (name: string, email: string, password: string, captchaToken?: string) =>
+⋮----
+// Handle CAPTCHA if enabled
+⋮----
+// Verify CAPTCHA if server-side secret is available
+⋮----
+const resetPassword = async (token: string, newPassword: string) =>
+⋮----
+// The token is handled by Supabase when redirecting to your app
+⋮----
+const sendPasswordResetEmail = async (email: string) =>
+⋮----
+const verifyEmail = async (token: string) =>
+⋮----
+// The token is handled by Supabase when redirecting to your app
+⋮----
+const logout = async () =>
+⋮----
+// Update the current session to inactive
+⋮----
+// Context value
+⋮----
+/**
+ * Hook to use the authentication context
+ *
+ * @returns The authentication context
+ * @throws Error if used outside of a RipTideProvider
+ */
+export function useAuth(): AuthContext
 </file>
 
 <file path="package.json">
 {
-  "name": "@masonator/riptide",
-  "version": "0.1.0",
-  "description": "A complete authentication and user management solution for NextJS applications using Supabase",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "bin": {
-    "riptide-migrations": "dist/db/cli.js"
-  },
-  "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "docs": "typedoc",
-    "clean": "rimraf dist",
-    "migrate:status": "ts-node src/db/cli.ts status",
-    "migrate:init": "ts-node src/db/cli.ts init",
-    "migrate:new": "ts-node src/db/cli.ts new",
-    "migrate:list": "ts-node src/db/cli.ts list",
-    "migrate:push": "ts-node src/db/cli.ts push",
-    "migrate:reset": "ts-node src/db/cli.ts reset",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "prettier --write",
-      "eslint"
-    ]
-  },
-  "keywords": [
-    "authentication",
-    "supabase",
-    "nextjs",
-    "react",
-    "user-management"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-username/riptide.git"
-  },
-  "bugs": {
-    "url": "https://github.com/your-username/riptide/issues"
-  },
-  "homepage": "https://github.com/your-username/riptide#readme",
-  "peerDependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3",
-    "next": ">=13",
-    "react": ">=18",
-    "react-dom": ">=18"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.39.3"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/react": "^14.0.0",
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "husky": "^9.1.7",
-    "jsdom": "^26.0.0",
-    "lint-staged": "^15.5.0",
-    "prettier": "^3.0.0",
-    "rimraf": "^5.0.10",
-    "ts-node": "^10.9.2",
-    "typedoc": "^0.25.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
+    "name": "@masonator/riptide",
+    "version": "0.1.0",
+    "description": "A complete authentication and user management solution for NextJS applications using Supabase",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./server": {
+            "types": "./dist/server.d.ts",
+            "import": "./dist/server.js",
+            "require": "./dist/server.js"
+        }
+    },
+    "files": [
+        "dist",
+        "src/db/migrations"
+    ],
+    "bin": {
+        "riptide": "dist/cli.js"
+    },
+    "scripts": {
+        "dev": "NODE_OPTIONS=--no-warnings tsc --watch",
+        "build": "NODE_OPTIONS=--no-warnings tsc",
+        "test": "NODE_OPTIONS=--no-warnings vitest run",
+        "test:watch": "NODE_OPTIONS=--no-warnings vitest",
+        "lint": "NODE_OPTIONS=--no-warnings eslint .",
+        "format": "NODE_OPTIONS=--no-warnings prettier --write \"src/**/*.{ts,tsx}\"",
+        "docs": "typedoc",
+        "clean": "rimraf dist",
+        "prepare": "husky",
+        "postinstall": "npx tsc || true"
+    },
+    "lint-staged": {
+        "*.{ts,tsx}": [
+            "prettier --write",
+            "eslint"
+        ]
+    },
+    "keywords": [
+        "authentication",
+        "supabase",
+        "nextjs",
+        "react",
+        "user-management"
+    ],
+    "author": "",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/your-username/riptide.git"
+    },
+    "bugs": {
+        "url": "https://github.com/your-username/riptide/issues"
+    },
+    "homepage": "https://github.com/your-username/riptide#readme",
+    "peerDependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.39.3",
+        "next": ">=13",
+        "react": ">=18",
+        "react-dom": ">=18"
+    },
+    "dependencies": {
+        "@supabase/ssr": "^0.6.1",
+        "@supabase/supabase-js": "^2.39.3",
+        "commander": "^13.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.0.0",
+        "@testing-library/jest-dom": "^6.1.4",
+        "@testing-library/react": "^14.0.0",
+        "@types/node": "^20.10.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "eslint": "^8.57.1",
+        "eslint-config-standard": "^17.1.0",
+        "eslint-plugin-import": "^2.31.0",
+        "eslint-plugin-n": "^16.6.2",
+        "eslint-plugin-promise": "^6.6.0",
+        "eslint-plugin-react": "^7.37.4",
+        "eslint-plugin-react-hooks": "^4.6.2",
+        "husky": "^9.1.7",
+        "jsdom": "^26.0.0",
+        "lint-staged": "^15.5.0",
+        "prettier": "^3.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "rimraf": "^5.0.10",
+        "ts-node": "^10.9.2",
+        "typedoc": "^0.25.0",
+        "typescript": "^5.0.0",
+        "typescript-eslint": "^7.18.0",
+        "vitest": "^3.0.9"
+    }
 }
 </file>
 
-<file path="README.md">
-# RipTide Core
+<file path="src/index.ts">
+// Re-export types (safe for all environments)
+⋮----
+// Export only client-safe modules by default
+⋮----
+// Important: Don't export DB module from main entry point
+</file>
 
-A complete authentication and user management solution for NextJS applications using Supabase.
+<file path="README.md">
+# RipTide
+
+**RipTide is an NPM package** that provides a complete authentication and user management solution for NextJS applications using Supabase.
+
+This package is designed to be integrated into your existing NextJS application, providing ready-to-use hooks, components, and utilities to handle all aspects of authentication.
+
+## Purpose & Overview
+
+RipTide connects your NextJS application to Supabase for auth functionality while providing:
+
+- Pre-built React components for login, registration, profile management
+- React hooks for auth state and operations
+- Route protection middleware
+- Session management
+- CSRF and rate-limiting protections
+- CAPTCHA integration
+
+## Quick Start Integration
+
+1. Install the package in your NextJS project:
+
+   ```bash
+   npm install @masonator/riptide
+   ```
+
+2. Add the RipTide provider to your app:
+
+   ```jsx
+   // app/layout.tsx or similar wrapper component
+   import { RipTideProvider } from '@masonator/riptide';
+
+   export default function RootLayout({ children }) {
+     return (
+       <html lang="en">
+         <body>
+           <RipTideProvider config={{
+             supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+             supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+           }}>
+             {children}
+           </RipTideProvider>
+         </body>
+       </html>
+     );
+   }
+   ```
+
+3. Use the components in your pages:
+
+   ```jsx
+   // app/login/page.tsx or similar
+   import { LoginForm } from '@masonator/riptide';
+   
+   export default function LoginPage() {
+     return (
+       <div className="max-w-md mx-auto mt-10">
+         <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+         <LoginForm redirectUrl="/dashboard" />
+       </div>
+     );
+   }
+   ```
+
+## Supabase Setup
+
+### Using the RipTide CLI
+
+RipTide comes with a CLI tool to help you set up Supabase in your NextJS project:
+
+```bash
+# Initialize Supabase with RipTide (this runs migrations and sets up your environment)
+npx riptide init
+```
+
+This command will:
+
+1. Check if Supabase CLI is installed
+2. Initialize Supabase if not already done
+3. Set up environment variables in your .env.local file
+4. Copy and apply database migrations
+
+### Prerequisites
+
+You need an existing NextJS 15 project to integrate this package.
+
+Running `npx masonator/riptide init` will create a new supabase project within your root directory and copy the migrations from the package to the project.
 
 ## Features
 
 - 🔐 Authentication (login, register, password reset)
+  - Secure email/password authentication
+  - Email verification flow
+  - Password reset with secure tokens
+  - Protection against brute force attacks with rate limiting
+  - CAPTCHA integration (reCAPTCHA, hCaptcha)
+  - CSRF protection for all forms
 - 👤 User profile management
 - 🔑 API token management
 - 🕒 Session management
+  - Multi-device tracking
+  - Session revocation
+  - Device and location tracking
+  - Session activity history
+  - Current session identification
+  - Automatic session timeout
 - 🔒 Route protection with middleware
 - 🔄 Real-time session syncing
 
-## Installation
+## Configuration Reference
+
+The `RipTideProvider` accepts a comprehensive configuration object to customize behavior:
+
+```jsx
+<RipTideProvider config={{
+  // REQUIRED: Supabase connection settings
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  
+  // OPTIONAL: Auth settings
+  auth: {
+    redirectTo: '/login',             // Where to redirect when auth required
+    emailVerification: true,          // Require email verification
+    passwordMinLength: 8,             // Minimum password length
+    persistSession: true,             // Whether to persist session across page reloads
+  },
+  
+  // OPTIONAL: Rate limiting settings
+  rateLimit: {
+    enabled: true,                    // Enable rate limiting
+    max: 5,                           // Maximum attempts
+    windowMs: 15 * 60000,             // Time window in milliseconds (15 minutes)
+    skipSuccessfulRequests: true,     // Don't count successful logins
+  },
+  
+  // OPTIONAL: CAPTCHA settings
+  captcha: {
+    enabled: false,                   // Enable CAPTCHA integration
+    provider: 'recaptcha',            // 'recaptcha' or 'hcaptcha'
+    siteKey: '',                      // Your CAPTCHA site key
+    secretKey: '',                    // Your CAPTCHA secret key (server-side only)
+    showAfterAttempts: 3,             // Show CAPTCHA after N failed attempts
+  },
+  
+  // OPTIONAL: Session settings
+  session: {
+    timeoutMs: 30 * 24 * 60 * 60 * 1000, // Session timeout in ms (default 30 days)
+    enableCsrf: true,                 // Enable CSRF protection
+    persistDeviceInfo: true,          // Store device info with sessions
+    trackLocationInfo: true,          // Track location data (country, city)
+    maxSessions: 5,                   // Maximum concurrent sessions per user
+  },
+  
+  // OPTIONAL: UI settings
+  ui: {
+    theme: 'light',                   // Light or dark theme for components
+    customClasses: {                  // Custom CSS classes
+      loginForm: '',
+      registerForm: '',
+      // etc.
+    },
+  },
+}}>
+  {children}
+</RipTideProvider>
+```
+
+## Package Structure
+
+RipTide is organized to support both client and server environments:
+
+- **Main Import** (`import { RipTideProvider } from '@masonator/riptide'`)  
+  Contains browser-safe components and utilities for authentication UI and client-side auth functionality.
+
+- **Server Import** (`import { setupSupabase } from '@masonator/riptide/server'`)  
+  Contains server-side utilities for database setup, migrations, and other Node.js specific functionality.
+
+### Example Usage
+
+```tsx
+// In your frontend components (client-side)
+import { RipTideProvider, useAuth } from '@masonator/riptide';
+
+// In your setup scripts or server-side code (Node.js environment only)
+import { setupSupabase, applyMigrations } from '@masonator/riptide/server';
+```
+
+This separation ensures that browser environments don't attempt to load Node.js specific modules.
+
+## Component Library
+
+RipTide provides pre-built UI components that integrate with your NextJS application:
+
+## Password Validation
+
+RipTide now uses simplified password validation rules:
+
+- Passwords must be at least 8 characters long
+- Passwords must contain at least one lowercase letter
+
+This makes registration and login more user-friendly while maintaining basic security.
+
+## Usage in Next.js
+
+### Setup
+
+1. Install the package:
 
 ```bash
 npm install @masonator/riptide
 ```
 
-## Database Migrations
+2. Wrap your application with the `RipTideProvider`:
 
-RipTide provides a comprehensive solution for managing database schemas and migrations using Supabase.
-
-### Features
-
-- **SQL Migration Files**: Pre-built schema definitions with Row Level Security (RLS)
-- **CLI Commands**: Simple commands for managing migrations
-- **Migration Status Checking**: Check which migrations have been applied
-- **Setup Wizard Integration**: Seamlessly integrate with the RipTide setup wizard
-- **Local Development**: Works with local Supabase instances
-
-### Prerequisites
-
-You need a fresh NextJS 15 project to install this package.
-
-Running npx masonator/riptide init will create a new supabase project within your root directory and copy the migrations from the package to the project.
-
-It will attempt to update the .env file with the correct values and run the migrations.
-
-It will then attempt to run the migrations and apply them to the database.
-
-
-### Setup Wizard Integration
-
-RipTide's database migrations are designed to integrate seamlessly with the setup wizard:
-
-### Database Schema
-
-RipTide Core includes the following pre-built schemas:
-
-1. **Profiles Table**: Extends Supabase auth.users with profile information
-   - Links to `auth.users` with ON DELETE CASCADE
-   - Stores user profile information like name, avatar, and preferences
-   - Includes RLS policies for secure access
-
-2. **API Tokens Table**: Manages user-generated API tokens
-   - Stores token names, hashes, scopes, and expiration dates
-   - Tracks token usage with last_used_at timestamp
-   - Includes revocation capabilities
-
-3. **User Sessions Table**: Tracks active user sessions
-   - Stores device and location information
-   - Enables multi-device login tracking
-   - Supports session revocation
-
-## Quick Start
-
-```jsx
-// _app.tsx
+```tsx
+// app/providers.tsx
 import { RipTideProvider } from '@masonator/riptide';
 
-function MyApp({ Component, pageProps }) {
+export function Providers({ children }) {
   return (
-    <RipTideProvider config={{
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    }}>
-      <Component {...pageProps} />
+    <RipTideProvider>
+      {children}
     </RipTideProvider>
   );
 }
-
-export default MyApp;
 ```
 
-## Usage
+3. Use the provider in your root layout:
 
-### Authentication
+```tsx
+// app/layout.tsx
+import { Providers } from "./providers";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+### Login Page
+
+Create a login page using the `LoginForm` component:
+
+```tsx
+// app/login/page.tsx
+import { LoginForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+export default function LoginPage() {
+  const router = useRouter();
+  
+  const onLoginSuccess = () => {
+    // Redirect to dashboard after successful login
+    router.push('/dashboard');
+  };
+  
+  return (
+    <div className="container mx-auto p-4">
+      <LoginForm onSuccess={onLoginSuccess} />
+    </div>
+  );
+}
+```
+
+### Registration Page
+
+Create a registration page using the `RegisterForm` component:
+
+```tsx
+// app/register/page.tsx
+import { RegisterForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+
+export default function RegisterPage() {
+  const router = useRouter();
+  
+  const onRegisterSuccess = () => {
+    // Redirect to login after successful registration
+    router.push('/login');
+  };
+  
+  return (
+    <div className="container mx-auto p-4">
+      <RegisterForm onSuccess={onRegisterSuccess} />
+    </div>
+  );
+}
+```
+
+### Protected Routes
+
+Protect routes that require authentication:
+
+```tsx
+// app/dashboard/page.tsx
+import { useAuth } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+export default function Dashboard() {
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, loading, router]);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div className="container mx-auto p-4">
+      <h1>Dashboard</h1>
+      <p>This is a protected route. Only authenticated users can see this.</p>
+    </div>
+  );
+}
+```
+
+## API Reference
+
+### Components
+
+- `LoginForm`: Renders a login form with email and password fields
+- `RegisterForm`: Renders a registration form with name, email, and password fields
+- `RipTideProvider`: Authentication context provider
+
+### Hooks
+
+- `useAuth()`: Returns authentication state and methods:
+  - `isAuthenticated`: Boolean indicating if user is logged in
+  - `loading`: Boolean indicating if auth state is loading
+  - `login(email, password)`: Login method
+  - `register(name, email, password)`: Registration method
+  - `logout()`: Logout method
+
+### LoginForm Component
+
+A complete login form with CSRF protection, rate limiting feedback, and CAPTCHA integration:
 
 ```jsx
-import { useAuth } from '@masonator/riptide';
+import { LoginForm } from '@masonator/riptide';
+import { useRouter } from 'next/navigation';
 
 function LoginPage() {
-  const { login, isLoading } = useAuth();
+  const router = useRouter();
+  
+  const handleSuccess = () => {
+    router.push('/dashboard');
+  };
+  
+  return (
+    <div className="max-w-md mx-auto mt-10">
+      <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+      
+      <LoginForm 
+        onSuccess={handleSuccess}
+        // or use redirectUrl="/dashboard" for simple redirects
+        showCaptcha={true} // Enable CAPTCHA (requires captcha.enabled config)
+        className="bg-white p-6 rounded-lg shadow-md" // Optional custom styling
+      />
+    </div>
+  );
+}
+```
+
+The `LoginForm` component includes:
+
+- Email and password fields with proper validation
+- CSRF protection built-in
+- Rate limiting feedback for users
+- CAPTCHA integration (optional)
+- Accessible design with ARIA attributes
+- Loading states and error handling
+- Customizable styling via className prop
+
+Supported props:
+
+- `onSuccess`: Function to call after successful login
+- `redirectUrl`: URL to redirect to after successful login (alternative to onSuccess)
+- `showCaptcha`: Boolean to show/hide CAPTCHA integration
+- `className`: Custom CSS classes for the form
+
+#### CAPTCHA Implementation Details
+
+When `showCaptcha={true}` is set on the `LoginForm` component, RipTide will:
+
+1. Render the CAPTCHA widget in the `captcha-container` element
+2. When the user completes the CAPTCHA challenge, the verification token is automatically captured
+3. The token is stored in the component's state and sent with the login credentials when the form is submitted
+4. The backend validates this token with the CAPTCHA provider to verify the user is human
+5. If validation fails, an error will be displayed in the form
+
+To enable CAPTCHA protection:
+
+1. Configure the CAPTCHA provider in your `RipTideProvider`:
+
+```jsx
+<RipTideProvider config={{
+  // ... other configuration ...
+  captcha: {
+    enabled: true,
+    provider: 'recaptcha', // or 'hcaptcha'
+    siteKey: 'your-site-key',  // Your CAPTCHA site key
+    secretKey: 'your-secret-key' // Your CAPTCHA secret key (server side only)
+  }
+}}>
+  <Component {...pageProps} />
+</RipTideProvider>
+```
+
+2. Add the `showCaptcha` prop to your `LoginForm` component:
+
+```jsx
+<LoginForm showCaptcha={true} />
+```
+
+The CAPTCHA will be displayed after excessive failed login attempts, or can be shown by default when the `showCaptcha` prop is set to `true`.
+
+## Hooks API
+
+RipTide provides React hooks for integrating authentication into your custom components:
+
+### Authentication Hooks
+
+```jsx
+import { useAuth, useLogin, useRegister, usePasswordReset } from '@masonator/riptide';
+
+// Basic auth status check
+function ProfilePage() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>Please log in</div>;
+  
+  return <div>Welcome, {user.email}</div>;
+}
+
+// Login form with hook
+function CustomLoginPage() {
+  const { login, isLoading, error } = useLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -1580,24 +3286,112 @@ function LoginPage() {
       await login(email, password);
       // Redirect or show success message
     } catch (error) {
-      // Handle error
+      // Error already captured in the hook
     }
   };
   
   return (
     <form onSubmit={handleLogin}>
-      {/* Form fields */}
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Loading...' : 'Login'}
-      </button>
+      {/* Your custom form implementation */}
     </form>
+  );
+}
+
+// Registration with hooks
+function CustomRegisterPage() {
+  const { register, isLoading, error } = useRegister();
+  
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      await register(name, email, password);
+      // Show verification message
+    } catch (error) {
+      // Error handling
+    }
+  };
+  
+  // Form implementation
+}
+
+// Password reset
+function CustomPasswordResetPage() {
+  const { sendResetEmail, resetPassword, isLoading, error } = usePasswordReset();
+  
+  // Implementation for request form and reset form
+}
+```
+
+### Session Management Hooks
+
+```jsx
+import { useSession } from '@masonator/riptide';
+
+// Display and manage user sessions
+function SecuritySettingsPage() {
+  const { 
+    sessions, 
+    currentSession, 
+    isLoading, 
+    revokeSession, 
+    getCsrfToken 
+  } = useSession();
+  
+  if (isLoading) return <div>Loading sessions...</div>;
+  
+  const handleRevoke = async (sessionId) => {
+    // Get a CSRF token for session revocation
+    const csrfToken = getCsrfToken();
+    
+    // Pass the CSRF token for security
+    await revokeSession(sessionId, csrfToken);
+    // Session list will update automatically
+  };
+  
+  return (
+    <div>
+      <h2>Active Sessions</h2>
+      {sessions.map(session => (
+        <div key={session.id} className={session.is_current ? 'current-session' : ''}>
+          <div>
+            Device: {session.device?.name} ({session.device?.os})
+          </div>
+          <div>
+            Location: {session.location?.city}, {session.location?.country}
+          </div>
+          <div>
+            Last active: {new Date(session.last_active_at).toLocaleString()}
+          </div>
+          {!session.is_current && (
+            <button onClick={() => handleRevoke(session.id)}>
+              Revoke This Session
+            </button>
+          )}
+          {session.is_current && <span>Current Session</span>}
+        </div>
+      ))}
+    </div>
   );
 }
 ```
 
+## Security Features
+
+RipTide includes several security features:
+
+1. **CSRF Protection**: All session operations (like revocation) are protected by CSRF tokens
+2. **Configurable Session Timeout**: Set custom session expiration periods
+3. **Device Fingerprinting**: Sessions include detailed device information
+4. **Location Tracking**: Geographic information is included where available
+5. **Multi-device Management**: Users can manage all their active sessions
+6. **Current Session Indication**: The user's current session is clearly marked
+7. **Automatic Invalidation**: Sessions are invalidated on security events like password changes
+
 ## Development
 
-### Setup
+### Setup for Package Development
+
+If you want to contribute to the RipTide package development:
 
 1. Clone the repository:
 
@@ -1639,7 +3433,8 @@ riptide/
 ├── src/             # Source code
 │   ├── auth/        # Authentication related functions
 │   ├── context/     # React context providers
-│   └── test/        # Test utilities
+│   ├── components/  # UI components
+│   ├── test/        # Test utilities
 │   └── db/          # Database related functions and migrations
 ├── tsconfig.json    # TypeScript configuration
 └── package.json     # Package configuration

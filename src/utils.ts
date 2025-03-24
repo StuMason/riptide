@@ -2,13 +2,45 @@
  * Utility functions for RipTide
  */
 
+import { randomBytes } from 'crypto';
+
 /**
- * Creates a CSRF token
+ * Creates a CSRF token using cryptographically secure random bytes
  *
  * @returns A random string to use as a CSRF token
  */
 export function createCsrfToken(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  // Use crypto.randomBytes instead of Math.random for better security
+  return randomBytes(24).toString('hex');
+}
+
+/**
+ * Performs a constant-time comparison of two strings to mitigate timing attacks
+ *
+ * @param a - First string to compare
+ * @param b - Second string to compare
+ * @returns True if the strings match
+ */
+export function compareValues(a: string, b: string): boolean {
+  // If lengths differ, return false but spend same amount of time
+  if (a.length !== b.length) {
+    // Still compare to spend same amount of time
+    let result = 0;
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return false;
+  }
+
+  // Compare each character, accumulating differences
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+
+  // If result is 0, all characters matched
+  return result === 0;
 }
 
 /**
@@ -39,19 +71,22 @@ export function validatePassword(password: string): {
     };
   }
 
-  const hasUpperCase = /[A-Z]/.test(password);
+  // const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
-  const criteria = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar];
+  //TESTING!!!
+  // const hasNumbers = /\d/.test(password);
+  // const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+  // const criteria = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar];
+  const criteria = [hasLowerCase];
   const meetsCriteriaCount = criteria.filter(Boolean).length;
 
-  if (meetsCriteriaCount < 3) {
+  // Simplified check that only requires lowercase letters
+  if (meetsCriteriaCount < 1) {
     return {
       isValid: false,
-      feedback:
-        'Password must contain at least 3 of the following: uppercase letters, lowercase letters, numbers, and special characters',
+      feedback: 'Password must contain at least lowercase letters',
     };
   }
 

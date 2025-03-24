@@ -140,7 +140,7 @@ export function LoginForm({
 
       {/* CAPTCHA integration placeholder */}
       {showCaptcha && (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid="login-captcha-wrapper">
           <Captcha onVerify={handleCaptchaVerification} className="flex justify-center" />
           {authError?.field === 'captcha' && (
             <p id="captcha-error" className="mt-1 text-sm text-red-600 text-center">
